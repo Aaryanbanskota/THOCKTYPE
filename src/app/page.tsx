@@ -16,7 +16,9 @@ import {
   ArrowRight,
   Terminal,
   SlidersHorizontal,
-  Keyboard as KeyboardIcon
+  Keyboard as KeyboardIcon,
+  BookOpen,
+  ChevronDown
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -68,44 +70,29 @@ export default function HomePage() {
           Eight switch recordings with dedicated spacebar stabilizers and spring return acoustics. Type on the keyboard below or jump into a benchmark.
         </p>
 
-        {/* Direct Action Hub */}
-        <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+        {/* Direct Action Hub: Exactly Two Buttons (Launch & Learn More) */}
+        <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/test"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             <Flame className="w-4 h-4 fill-zinc-950" />
             <span>Launch Typing Test</span>
             <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-amber-600/30 text-amber-950 text-[10px] font-mono font-bold">Alt+T</kbd>
           </Link>
 
-          <Link
-            href="/focus"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
-            title="Open pure distraction-free Zen Focus mode"
+          <a
+            href="#learn-more"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('learn-more')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs sm:text-sm tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
-            <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
-            <span>Zen Focus</span>
-            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono">Alt+F</kbd>
-          </Link>
-
-          <Link
-            href="/sounds"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Radio className="w-3.5 h-3.5 text-sky-400" />
-            <span>Sound Studio</span>
-            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono">Alt+S</kbd>
-          </Link>
-
-          <Link
-            href="/shortcuts"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-xs tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <KeyboardIcon className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Shortcuts</span>
-            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono">?</kbd>
-          </Link>
+            <BookOpen className="w-4 h-4 text-amber-400" />
+            <span>Learn More</span>
+            <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+          </a>
         </div>
 
         {/* 2. Interactive Mechanical Workbench */}
@@ -277,36 +264,241 @@ export default function HomePage() {
 
       </section>
 
-      {/* 4. Keyboard Shortcuts Reference Deck */}
-      <section className="w-full py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto border-t border-zinc-800/70">
-        <div className="p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800/80">
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider mb-4">
-            <KeyboardIcon className="w-4 h-4 text-amber-400" />
-            <span>Studio Keyboard Shortcuts</span>
+      {/* 4. Deep-Dive Architecture & Feature Guide (#learn-more) */}
+      <section id="learn-more" className="w-full py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-zinc-800/70">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono uppercase tracking-widest mb-3">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Studio Architecture & Features</span>
           </div>
-
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 text-xs font-mono">
-            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
-              <div className="text-zinc-500 text-[10px] mb-1">RESTART TEST</div>
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Tab + Enter</kbd>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
-              <div className="text-zinc-500 text-[10px] mb-1">ZEN FOCUS MODE</div>
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Alt + F</kbd>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
-              <div className="text-zinc-500 text-[10px] mb-1">END UNLIMITED SESSION</div>
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Esc</kbd>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
-              <div className="text-zinc-500 text-[10px] mb-1">HOT-SWAP SWITCH</div>
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Alt + 1..8</kbd>
-            </div>
-          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight">
+            How THOCKTYPE Works: Features & Triggers
+          </h2>
+          <p className="mt-2.5 text-xs sm:text-sm text-zinc-400 leading-relaxed">
+            Everything inside the platform is built for home-row speed, authentic acoustic immersion, and zero-distraction typing.
+          </p>
         </div>
+
+        {/* 3 Comprehensive Feature Pillars */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Pillar 1: Zen Focus Mode */}
+          <div className="flex flex-col justify-between p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700 transition-all">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Maximize2 className="w-5 h-5" />
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-zinc-800 text-amber-400 font-semibold border border-zinc-700">
+                  Distraction Free
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-zinc-100">Zen Focus Engine</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  A high-velocity typing sanctuary. Eliminates all headers, navigation elements, score counters, and peripheral animations so your eyes remain locked on the text caret.
+                </p>
+              </div>
+
+              {/* What It Includes */}
+              <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                <div className="text-[11px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">
+                  Features Included:
+                </div>
+                <ul className="text-xs text-zinc-300 space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span><strong>Full-Screen Lock:</strong> Press F11 or tap Fullscreen for pure edge-to-edge text.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span><strong>Flexible Modes:</strong> Choose 15s, 30s, 60s, or pure Unlimited endurance.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span><strong>Direct Visit Setup:</strong> Visiting <code className="text-amber-400 font-mono">/focus</code> directly presents a tactile configuration card.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* How to Trigger */}
+              <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800/80 space-y-1.5">
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">
+                  How to Trigger:
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Global Shortcut</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-amber-400 font-bold">Alt + F</kbd>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Direct Route</span>
+                  <span className="text-zinc-400">/focus</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Finish Session</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">Esc</kbd>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-5 mt-5 border-t border-zinc-800/80">
+              <Link
+                href="/focus"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-all hover:scale-[1.02]"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Launch Zen Focus (Alt + F)</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Pillar 2: Sound Studio & Acoustic Scope */}
+          <div className="flex flex-col justify-between p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700 transition-all">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                  <Radio className="w-5 h-5" />
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-zinc-800 text-sky-400 font-semibold border border-zinc-700">
+                  Web Audio API
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-zinc-100">Sound Studio & Acoustics</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  Real-time physical switch synthesis and acoustic sampling. Every press triggers dynamic stereo panning, spring release mechanics, and low-end deskmat resonance.
+                </p>
+              </div>
+
+              {/* What It Includes */}
+              <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                <div className="text-[11px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">
+                  Features Included:
+                </div>
+                <ul className="text-xs text-zinc-300 space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="text-sky-400 mt-0.5">•</span>
+                    <span><strong>8 Switch Personalities:</strong> Linear, clicky, tactile, and muted sound signatures.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-sky-400 mt-0.5">•</span>
+                    <span><strong>Spatial Stereo Panning:</strong> Left-hand keys pan subtly to left ear; right-hand keys pan right.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-sky-400 mt-0.5">•</span>
+                    <span><strong>Return Spring & Deskmat:</strong> Toggle key release tick and deskmat acoustic damping.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* How to Trigger */}
+              <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800/80 space-y-1.5">
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">
+                  How to Trigger:
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Hot-Swap Switches</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-sky-400 font-bold">Alt + 1..8</kbd>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Volume Tuning</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">Alt + ↑ / ↓</kbd>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Sound Lab Page</span>
+                  <span className="text-zinc-400">/sounds</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-5 mt-5 border-t border-zinc-800/80">
+              <Link
+                href="/sounds"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-all hover:scale-[1.02]"
+              >
+                <Radio className="w-3.5 h-3.5 text-sky-400" />
+                <span>Explore Sound Studio (Alt + S)</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Pillar 3: Integrated Shortcut Engine */}
+          <div className="flex flex-col justify-between p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700 transition-all">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <KeyboardIcon className="w-5 h-5" />
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-zinc-800 text-emerald-400 font-semibold border border-zinc-700">
+                  Global Hotkeys
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-zinc-100">Integrated Shortcuts</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  Total home-row efficiency. Never lift your wrists to reach for a mouse. Every feature has a direct, globally intercepted keyboard shortcut.
+                </p>
+              </div>
+
+              {/* What It Includes */}
+              <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                <div className="text-[11px] font-mono text-zinc-400 font-semibold uppercase tracking-wider">
+                  Features Included:
+                </div>
+                <ul className="text-xs text-zinc-300 space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-0.5">•</span>
+                    <span><strong>Instant Test Restart:</strong> <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-mono">Tab + Enter</kbd> restarts instantly without mouse.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-0.5">•</span>
+                    <span><strong>HUD Toast Overlay:</strong> Visual feedback pops up in real time when any hotkey triggers.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-0.5">•</span>
+                    <span><strong>Quick Cheat Sheet:</strong> Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-mono">?</kbd> anywhere to open instant overlay.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* How to Trigger */}
+              <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800/80 space-y-1.5">
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">
+                  Key Command List:
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Restart Benchmark</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-emerald-400 font-bold">Tab + Enter</kbd>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Difficulty Mode</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">Alt + M</kbd>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-300">Cheat Sheet Modal</span>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-amber-400 font-bold">?</kbd>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-5 mt-5 border-t border-zinc-800/80">
+              <Link
+                href="/shortcuts"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-all hover:scale-[1.02]"
+              >
+                <KeyboardIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <span>View Full Shortcuts Deck</span>
+              </Link>
+            </div>
+          </div>
+
+        </div>
+
       </section>
 
     </div>

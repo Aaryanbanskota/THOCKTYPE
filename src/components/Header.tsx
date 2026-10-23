@@ -86,7 +86,7 @@ export function Header() {
         <nav className="flex items-center gap-1 text-xs font-medium text-zinc-400">
           <Link
             href="/test"
-            className={`px-2 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               pathname === '/test'
                 ? 'bg-zinc-800/90 text-amber-400 font-semibold'
                 : 'hover:text-zinc-200 hover:bg-zinc-900/60'
@@ -97,7 +97,7 @@ export function Header() {
           </Link>
           <Link
             href="/sounds"
-            className={`px-2 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               pathname === '/sounds'
                 ? 'bg-zinc-800/90 text-amber-400 font-semibold'
                 : 'hover:text-zinc-200 hover:bg-zinc-900/60'
@@ -107,19 +107,8 @@ export function Header() {
             <span><span className="hidden sm:inline">Sound </span>Lab</span>
           </Link>
           <Link
-            href="/shortcuts"
-            className={`px-2 sm:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-              pathname === '/shortcuts'
-                ? 'bg-zinc-800/90 text-amber-400 font-semibold'
-                : 'hover:text-zinc-200 hover:bg-zinc-900/60'
-            }`}
-          >
-            <Keyboard className="w-3.5 h-3.5" />
-            <span>Shortcuts</span>
-          </Link>
-          <Link
             href="/#lineup"
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:text-zinc-200 hover:bg-zinc-900/60 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg hover:text-zinc-200 hover:bg-zinc-900/60 transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
             <span>Lineup</span>

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Headphones, Cpu, Sparkles } from 'lucide-react';
+import { Headphones, Cpu, Sparkles, Keyboard } from 'lucide-react';
 
 export function Footer() {
   const pathname = usePathname();
@@ -66,9 +66,13 @@ export function Footer() {
                 <span>Hot-Swap</span>
                 <kbd className="px-1.5 py-0.5 text-[10px] bg-zinc-900 border border-zinc-700 rounded text-zinc-300">Alt + 1..8</kbd>
               </li>
-              <li className="pt-1">
-                <Link href="/shortcuts" className="text-amber-400 hover:text-amber-300 text-[11px] font-sans font-medium flex items-center gap-1">
-                  View Full Shortcut Deck →
+              <li className="pt-2">
+                <Link
+                  href="/shortcuts"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-sans font-semibold transition-all hover:scale-105"
+                >
+                  <Keyboard className="w-3.5 h-3.5" />
+                  <span>View All Shortcuts →</span>
                 </Link>
               </li>
             </ul>
