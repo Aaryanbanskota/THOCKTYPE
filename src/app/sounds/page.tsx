@@ -69,7 +69,7 @@ export default function SoundLabPage() {
       </div>
 
       {/* 1. Hot-Swap Switch Deck: 8 Modular Cards */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-8">
+      <div className="w-full grid grid-cols-2 xs:grid-cols-4 lg:grid-cols-8 gap-2 mb-6 sm:mb-8">
         {PACK_IDS.map((id) => {
           const pack = SWITCH_PROFILES[id];
           const isSelected = activePack === id;
@@ -81,7 +81,7 @@ export default function SoundLabPage() {
                 setActivePack(id);
                 playKey('KeyF', id);
               }}
-              className={`flex flex-col items-center p-3 rounded-2xl border text-center transition-all ${
+              className={`flex flex-col items-center p-2.5 sm:p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                 isSelected
                   ? 'bg-zinc-800/90 border-zinc-600 ring-2 ring-amber-500/30 shadow-lg scale-102'
                   : 'bg-zinc-900/40 hover:bg-zinc-800/50 border-zinc-800/80 text-zinc-400 hover:text-zinc-200'
@@ -104,7 +104,7 @@ export default function SoundLabPage() {
       </div>
 
       {/* 2. Active Switch Spotlight Card */}
-      <div className="w-full p-6 sm:p-8 rounded-3xl bg-zinc-900/50 border border-zinc-800 shadow-xl mb-8 relative overflow-hidden">
+      <div className="w-full p-4 xs:p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-zinc-900/50 border border-zinc-800 shadow-xl mb-8 relative overflow-hidden">
         
         {/* Subtle accent glow */}
         <div
@@ -112,9 +112,9 @@ export default function SoundLabPage() {
           style={{ backgroundColor: currentProfile?.color }}
         />
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-zinc-800/80">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-6 border-b border-zinc-800/80">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <SwitchIcon
                 id={activePack}
                 className="w-4 h-4 shrink-0"
@@ -127,7 +127,7 @@ export default function SoundLabPage() {
                 {currentProfile?.pitch} Pitch
               </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl font-extrabold text-zinc-100">
               {currentProfile?.name}
             </h2>
             <p className="text-xs sm:text-sm font-medium text-amber-400 mt-0.5">
@@ -136,11 +136,11 @@ export default function SoundLabPage() {
           </div>
 
           {/* Quick Audition & Play in Test CTAs */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2.5 w-full md:w-auto">
             <button
               type="button"
               onClick={() => handleTestMelody(activePack)}
-              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700/60 shadow-sm transition-all active:scale-95"
+              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700/60 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <Play className={`w-3.5 h-3.5 ${previewingId === activePack ? 'fill-amber-400 text-amber-400' : 'fill-zinc-300'}`} />
               <span>{previewingId === activePack ? 'Auditioning...' : 'Audition Cadence'}</span>
@@ -157,7 +157,7 @@ export default function SoundLabPage() {
         </div>
 
         {/* Detailed Personality Narrative */}
-        <div className="py-5 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs border-b border-zinc-800/80">
+        <div className="py-5 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 text-xs border-b border-zinc-800/80">
           <div className="md:col-span-2">
             <span className="text-zinc-500 font-mono block mb-1">ACOUSTIC BEHAVIOR</span>
             <p className="text-zinc-300 leading-relaxed text-sm">

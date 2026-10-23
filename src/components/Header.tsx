@@ -85,25 +85,25 @@ export function Header() {
         <nav className="flex items-center gap-1 text-xs font-medium text-zinc-400">
           <Link
             href="/test"
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-2 xs:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               pathname === '/test'
                 ? 'bg-zinc-800/90 text-amber-400 font-semibold'
                 : 'hover:text-zinc-200 hover:bg-zinc-900/60'
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
-            <span>Typing Test</span>
+            <span><span className="hidden xs:inline">Typing </span>Test</span>
           </Link>
           <Link
             href="/sounds"
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-2 xs:px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               pathname === '/sounds'
                 ? 'bg-zinc-800/90 text-amber-400 font-semibold'
                 : 'hover:text-zinc-200 hover:bg-zinc-900/60'
             }`}
           >
             <Radio className="w-3.5 h-3.5" />
-            <span>Sound Lab</span>
+            <span><span className="hidden xs:inline">Sound </span>Lab</span>
           </Link>
           <Link
             href="/#lineup"
@@ -115,7 +115,7 @@ export function Header() {
         </nav>
 
         {/* Right: Clean Compact Controls (Switch Selector + Sound Popover) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           
           {/* 1. Compact Switch Selector Pill */}
           <div className="relative" ref={switchMenuRef}>
@@ -125,7 +125,7 @@ export function Header() {
                 setIsSwitchMenuOpen(!isSwitchMenuOpen);
                 setIsAudioMenuOpen(false);
               }}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 text-xs text-zinc-200 transition-all shadow-sm"
+              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 text-xs text-zinc-200 transition-all shadow-sm cursor-pointer"
               title="Change mechanical switch sound"
             >
               <SwitchIcon
@@ -133,7 +133,7 @@ export function Header() {
                 className="w-3.5 h-3.5 shrink-0"
                 style={{ color: currentProfile?.color }}
               />
-              <span className="font-semibold text-zinc-200 text-xs max-w-[100px] sm:max-w-[130px] truncate">
+              <span className="font-semibold text-zinc-200 text-xs max-w-[65px] xs:max-w-[100px] sm:max-w-[130px] truncate">
                 {currentProfile?.name}
               </span>
               <ChevronDown className="w-3 h-3 text-zinc-400 shrink-0" />
@@ -141,7 +141,7 @@ export function Header() {
 
             {/* Switch Selection Popover */}
             {isSwitchMenuOpen && (
-              <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:w-72 rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100 max-h-[80vh] overflow-y-auto">
                 <div className="px-2.5 py-1.5 mb-1.5 flex items-center justify-between border-b border-zinc-800/80">
                   <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
                     Select Mechanical Switch
@@ -149,7 +149,7 @@ export function Header() {
                   <button
                     type="button"
                     onClick={() => setIsSwitchMenuOpen(false)}
-                    className="text-zinc-500 hover:text-zinc-300"
+                    className="text-zinc-500 hover:text-zinc-300 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -168,7 +168,7 @@ export function Header() {
                           setIsSwitchMenuOpen(false);
                           playKey('KeyF', id);
                         }}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left text-xs transition-all ${
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left text-xs transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-zinc-800 text-zinc-100 font-semibold ring-1 ring-zinc-700'
                             : 'text-zinc-300 hover:bg-zinc-800/60'
@@ -204,7 +204,7 @@ export function Header() {
                 setIsAudioMenuOpen(!isAudioMenuOpen);
                 setIsSwitchMenuOpen(false);
               }}
-              className={`p-2 rounded-xl border transition-all ${
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
                 isAudioMenuOpen
                   ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-md'
                   : 'bg-zinc-900/80 hover:bg-zinc-800/80 border-zinc-800 text-zinc-300'
@@ -220,7 +220,7 @@ export function Header() {
 
             {/* Audio Controls Popover */}
             {isAudioMenuOpen && (
-              <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100 space-y-4">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:w-72 rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100 space-y-4">
                 
                 {/* Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-800">

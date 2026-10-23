@@ -161,82 +161,89 @@ export function VirtualKeyboard({ interactiveGlobal = true }: VirtualKeyboardPro
   return (
     <div className="w-full flex flex-col items-center select-none">
       {/* Keyboard Case */}
-      <div className="w-full max-w-4xl p-3 sm:p-5 rounded-3xl bg-gradient-to-b from-zinc-900 via-zinc-920 to-zinc-950 border-2 border-zinc-800 shadow-2xl shadow-black/80 relative">
+      <div className="w-full max-w-4xl p-2 xs:p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-zinc-900 via-zinc-920 to-zinc-950 border-2 border-zinc-800 shadow-2xl shadow-black/80 relative">
         
-        {/* Deskmat / Plate Inner Glow */}
-        <div className="relative p-2 sm:p-3 rounded-2xl bg-zinc-950/90 border border-zinc-800/80 shadow-inner space-y-1.5 sm:space-y-2">
-          {KEYBOARD_ROWS.map((row, rIdx) => (
-            <div key={rIdx} className="flex justify-center gap-1 sm:gap-1.5">
-              {row.map((key) => {
-                const isDown = activeKeys.has(key.code);
-                const isSpace = key.code === 'Space';
+        {/* Responsive Horizontal Scroll Wrapper for Mobile Viewports */}
+        <div className="w-full overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
+          <div className="min-w-[590px] sm:min-w-0 relative p-1.5 sm:p-3 rounded-xl sm:rounded-2xl bg-zinc-950/90 border border-zinc-800/80 shadow-inner space-y-1 sm:space-y-2">
+            {KEYBOARD_ROWS.map((row, rIdx) => (
+              <div key={rIdx} className="flex justify-center gap-1 sm:gap-1.5">
+                {row.map((key) => {
+                  const isDown = activeKeys.has(key.code);
+                  const isSpace = key.code === 'Space';
 
-                return (
-                  <button
-                    key={key.code}
-                    type="button"
-                    aria-label={key.label || key.code}
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      handleKeyDown(key.code);
-                    }}
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      handleKeyUp(key.code);
-                    }}
-                    onPointerLeave={() => {
-                      if (activeKeys.has(key.code)) {
+                  return (
+                    <button
+                      key={key.code}
+                      type="button"
+                      aria-label={key.label || key.code}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        handleKeyDown(key.code);
+                      }}
+                      onPointerUp={(e) => {
+                        e.preventDefault();
                         handleKeyUp(key.code);
-                      }
-                    }}
-                    style={{
-                      borderColor: isDown ? profile?.color : undefined,
-                      boxShadow: isDown
-                        ? `0 0 16px ${profile?.color}55, inset 0 2px 4px rgba(0,0,0,0.8)`
-                        : undefined
-                    }}
-                    className={`
-                      relative group flex flex-col items-center justify-center
-                      h-10 sm:h-12 text-xs font-mono font-medium rounded-lg sm:rounded-xl
-                      transition-all duration-75 select-none
-                      ${key.width || 'w-8 sm:w-11'}
-                      ${
-                        isDown
-                          ? 'translate-y-1 bg-zinc-800 text-zinc-100'
-                          : 'bg-zinc-900/90 hover:bg-zinc-800/80 text-zinc-300 border-b-2 sm:border-b-4 border-zinc-950 shadow-md'
-                      }
-                      border border-zinc-700/60
-                    `}
-                  >
-                    {/* Key Label */}
-                    {key.sub && (
-                      <span className="text-[9px] text-zinc-500 leading-none -mb-0.5">
-                        {key.sub}
+                      }}
+                      onPointerLeave={() => {
+                        if (activeKeys.has(key.code)) {
+                          handleKeyUp(key.code);
+                        }
+                      }}
+                      style={{
+                        borderColor: isDown ? profile?.color : undefined,
+                        boxShadow: isDown
+                          ? `0 0 16px ${profile?.color}55, inset 0 2px 4px rgba(0,0,0,0.8)`
+                          : undefined
+                      }}
+                      className={`
+                        relative group flex flex-col items-center justify-center
+                        h-9 sm:h-12 text-[11px] sm:text-xs font-mono font-medium rounded-lg sm:rounded-xl
+                        transition-all duration-75 select-none cursor-pointer
+                        ${key.width || 'w-8 sm:w-11'}
+                        ${
+                          isDown
+                            ? 'translate-y-1 bg-zinc-800 text-zinc-100'
+                            : 'bg-zinc-900/90 hover:bg-zinc-800/80 text-zinc-300 border-b-2 sm:border-b-4 border-zinc-950 shadow-md'
+                        }
+                        border border-zinc-700/60
+                      `}
+                    >
+                      {/* Key Label */}
+                      {key.sub && (
+                        <span className="text-[9px] text-zinc-500 leading-none -mb-0.5">
+                          {key.sub}
+                        </span>
+                      )}
+                      <span className={`${key.sub ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs'} tracking-tight`}>
+                        {key.label}
                       </span>
-                    )}
-                    <span className={`${key.sub ? 'text-[11px]' : 'text-xs'} tracking-tight`}>
-                      {key.label}
-                    </span>
 
-                    {/* Mechanical Stem Accent Dot on active */}
-                    {isSpace && (
-                      <div className="absolute inset-x-8 bottom-1.5 h-0.5 rounded-full bg-zinc-700/50 group-hover:bg-zinc-600" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+                      {/* Mechanical Stem Accent Dot on active */}
+                      {isSpace && (
+                        <div className="absolute inset-x-8 bottom-1.5 h-0.5 rounded-full bg-zinc-700/50 group-hover:bg-zinc-600" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile Swipe Hint */}
+        <div className="text-[10px] text-zinc-500 font-mono text-center mt-1 sm:hidden">
+          Swipe keyboard horizontally or tap to audition
         </div>
 
         {/* Brand Tag on Keyboard Case */}
-        <div className="mt-2.5 flex items-center justify-between px-2 text-[10px] text-zinc-500 font-mono">
+        <div className="mt-2 sm:mt-2.5 flex items-center justify-between px-2 text-[10px] text-zinc-500 font-mono">
           <div className="flex items-center gap-1.5">
             <span
-              className="w-2 h-2 rounded-full inline-block animate-pulse"
+              className="w-2 h-2 rounded-full inline-block animate-pulse shrink-0"
               style={{ backgroundColor: profile?.color }}
             />
-            <span>ACTIVE SWITCH: {profile?.name.toUpperCase()} ({profile?.category.toUpperCase()})</span>
+            <span className="truncate">ACTIVE SWITCH: {profile?.name.toUpperCase()}</span>
           </div>
           <span className="hidden sm:inline">65% LAYOUT • PHYSICAL & CLICKABLE KEYS</span>
         </div>

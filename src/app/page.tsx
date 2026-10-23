@@ -45,34 +45,34 @@ export default function HomePage() {
     <div className="w-full flex flex-col items-center">
       
       {/* 1. Tactical Industrial Masthead & Live Workbench */}
-      <section className="relative w-full pt-10 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
+      <section className="relative w-full pt-6 sm:pt-10 pb-8 sm:pb-12 px-3 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
         
         {/* Terminal Header Info */}
-        <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3 sm:mb-4">
           <span className="flex items-center gap-1.5 text-amber-400 font-bold">
             <span className="w-2 h-2 rounded-full bg-amber-400" />
             TYPELOUDER // THOCKTYPE
           </span>
-          <span>•</span>
+          <span className="hidden xs:inline">•</span>
           <span>Open Acoustic Lab</span>
-          <span>•</span>
+          <span className="hidden xs:inline">•</span>
           <span className="text-zinc-400">Zero Signup</span>
         </div>
 
         {/* Main Headline */}
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-zinc-100 tracking-tight max-w-2xl leading-[1.15]">
+        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight max-w-2xl leading-[1.18] sm:leading-[1.15]">
           Mechanical switch sound test & typing speed lab.
         </h1>
 
-        <p className="mt-3 text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
+        <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed px-2">
           Eight switch recordings with dedicated spacebar stabilizers and spring return acoustics. Type on the keyboard below or jump into a benchmark.
         </p>
 
         {/* Direct Action Hub */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-5 sm:mt-6 w-full flex flex-col xs:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-3">
           <Link
             href="/test"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-md shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+            className="w-full xs:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-md shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
           >
             <Flame className="w-4 h-4 fill-zinc-950" />
             <span>Launch Typing Test (60s)</span>
@@ -80,7 +80,7 @@ export default function HomePage() {
 
           <Link
             href="/focus"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
+            className="w-full xs:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
             title="Open pure distraction-free Zen Focus mode"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
@@ -89,7 +89,7 @@ export default function HomePage() {
 
           <Link
             href="/sounds"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
+            className="w-full xs:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
           >
             <Radio className="w-3.5 h-3.5 text-sky-400" />
             <span>Sound Studio</span>
@@ -268,7 +268,7 @@ export default function HomePage() {
             <span>Studio Keyboard Shortcuts</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 text-xs font-mono">
             <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
               <div className="text-zinc-500 text-[10px] mb-1">RESTART TEST</div>
               <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Tab + Enter</kbd>

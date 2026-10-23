@@ -500,86 +500,89 @@ Benchmark verified: ${window.location.origin}`;
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       
       {/* Test Config Toolbar (Mode, Time / Words, Sound Switcher & Focus Mode CTA) */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-8 bg-zinc-900/60 p-2.5 rounded-2xl border border-zinc-800/80 backdrop-blur-sm">
+      <div className="w-full flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3 mb-6 sm:mb-8 bg-zinc-900/60 p-2 sm:p-2.5 rounded-2xl border border-zinc-800/80 backdrop-blur-sm">
         
-        {/* Mode Selector (Time, Words, Unlimited) */}
-        <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
-          <button
-            type="button"
-            onClick={() => { setMode('time'); resetTest(); }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              mode === 'time'
-                ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            time
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('words'); resetTest(); }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              mode === 'words'
-                ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            words
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('unlimited'); resetTest(); }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              mode === 'unlimited'
-                ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            unlimited
-          </button>
+        {/* Left Section: Mode Selector + Sub-options */}
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
+          {/* Mode Selector (Time, Words, Unlimited) */}
+          <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
+            <button
+              type="button"
+              onClick={() => { setMode('time'); resetTest(); }}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                mode === 'time'
+                  ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              time
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('words'); resetTest(); }}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                mode === 'words'
+                  ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              words
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('unlimited'); resetTest(); }}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                mode === 'unlimited'
+                  ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              unlimited
+            </button>
+          </div>
+
+          {/* Sub-options for Time / Words */}
+          {mode === 'time' && (
+            <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
+              {[15, 30, 60, 90].map((sec) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => { setDuration(sec); resetTest(); }}
+                  className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    duration === sec
+                      ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mode === 'words' && (
+            <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
+              {[25, 50, 100].map((cnt) => (
+                <button
+                  key={cnt}
+                  type="button"
+                  onClick={() => { setWordTarget(cnt); resetTest(); }}
+                  className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    wordTarget === cnt
+                      ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {cnt}w
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Sub-options for Time / Words */}
-        {mode === 'time' && (
-          <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
-            {[15, 30, 60, 90].map((sec) => (
-              <button
-                key={sec}
-                type="button"
-                onClick={() => { setDuration(sec); resetTest(); }}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  duration === sec
-                    ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                {sec}s
-              </button>
-            ))}
-          </div>
-        )}
-
-        {mode === 'words' && (
-          <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
-            {[25, 50, 100].map((cnt) => (
-              <button
-                key={cnt}
-                type="button"
-                onClick={() => { setWordTarget(cnt); resetTest(); }}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  wordTarget === cnt
-                    ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                {cnt}w
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Right Section: Difficulty Mode, Switch Icon (compact, no text), Zen Focus */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-1.5 sm:gap-2">
           {/* Difficulty Mode Selector: Small icon buttons (easy, medium, hard) */}
           <div className="flex items-center bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
             {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => {
@@ -589,7 +592,7 @@ Benchmark verified: ${window.location.origin}`;
                   key={d}
                   type="button"
                   onClick={() => setDifficulty(d)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                     isSelected
                       ? d === 'easy'
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold shadow-sm'
@@ -640,41 +643,41 @@ Benchmark verified: ${window.location.origin}`;
             title="Open pure Zen Focus Mode in a new tab (Shortcut: Alt + F)"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline">Zen Focus ↗</span>
+            <span className="hidden xs:inline">Zen Focus ↗</span>
           </a>
         </div>
 
       </div>
 
       {/* Main Stats Header (Directly matching user screenshot layout: WPM, Accuracy, Time) */}
-      <div className="w-full flex justify-center items-center gap-12 sm:gap-16 py-4 mb-4 select-none">
+      <div className="w-full flex justify-center items-center gap-6 xs:gap-10 sm:gap-16 py-3 sm:py-4 mb-3 sm:mb-4 select-none">
         
         {/* WPM */}
         <div className="flex flex-col items-center">
-          <span className="text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
+          <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
             WPM
           </span>
-          <span className="text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
+          <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
             {wpm}
           </span>
         </div>
 
         {/* Accuracy */}
         <div className="flex flex-col items-center">
-          <span className="text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
+          <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
             Accuracy
           </span>
-          <span className="text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
+          <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
             {accuracy}%
           </span>
         </div>
 
         {/* Time */}
         <div className="flex flex-col items-center">
-          <span className="text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
+          <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
             Time
           </span>
-          <span className="text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
+          <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
             {mode === 'time' ? `${timeLeft}s` : `${elapsedSeconds}s`}
           </span>
         </div>
@@ -685,7 +688,7 @@ Benchmark verified: ${window.location.origin}`;
       {!isFinished ? (
         <div
           onClick={() => inputRef.current?.focus()}
-          className="relative w-full cursor-text rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
+          className="relative w-full cursor-text rounded-2xl sm:rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-4 xs:p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
         >
           {/* Hidden real input that captures keystrokes */}
           <input
@@ -707,7 +710,7 @@ Benchmark verified: ${window.location.origin}`;
           {/* Rendered Text with Caret and Character States */}
           <div
             ref={textContainerRef}
-            className="h-36 sm:h-44 overflow-hidden font-mono text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 transition-all"
+            className="h-32 xs:h-36 sm:h-44 overflow-hidden font-mono text-lg xs:text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 transition-all"
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
@@ -812,10 +815,10 @@ Benchmark verified: ${window.location.origin}`;
          * REDESIGNED PREMIUM PERFORMANCE SCORECARD
          * Clean, bespoke audio-engineering layout with interactive area chart
          * ========================================================================= */
-        <div className="w-full rounded-3xl bg-zinc-900/80 border border-zinc-800/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-full rounded-2xl sm:rounded-3xl bg-zinc-900/80 border border-zinc-800/90 p-4 xs:p-6 sm:p-10 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
           
           {/* Scorecard Header & Switch Attribution */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-zinc-800/80">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -1003,7 +1006,7 @@ Benchmark verified: ${window.location.origin}`;
           )}
 
           {/* Secondary Stats Strip: High-Precision Physics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-6 border-b border-zinc-800/80 text-xs font-mono">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 py-6 border-b border-zinc-800/80 text-xs font-mono">
             <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
               <span className="text-zinc-400 block text-[11px] mb-1">Keystroke Accounting</span>
               <span className="text-emerald-400 font-bold">{results?.correctChars}</span> correct
@@ -1107,43 +1110,43 @@ Benchmark verified: ${window.location.origin}`;
           )}
 
           {/* Scorecard Action Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             
             <button
               type="button"
               onClick={resetTest}
-              className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold tracking-wide shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold tracking-wide shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Next Test (Tab + Enter)</span>
             </button>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={copyScore}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
                 <span>{copied ? 'Scorecard Copied!' : 'Copy Score'}</span>
               </button>
 
               <a
-                href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
+                href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}&diff=${difficulty}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
               >
                 <Maximize2 className="w-4 h-4 text-amber-400" />
-                <span>Open in Focus Mode</span>
+                <span>Focus Mode</span>
               </a>
 
               <Link
                 href="/sounds"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all"
               >
                 <Layers className="w-4 h-4 text-sky-400" />
-                <span>Switch Studio</span>
+                <span>Sound Studio</span>
               </Link>
             </div>
 

@@ -270,15 +270,15 @@ function FocusModeContent() {
    * ========================================================================= */
   if (!isConfigured) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-[#121314] text-zinc-100 flex flex-col items-center justify-center p-6 select-none overflow-y-auto">
-        <div className="w-full max-w-lg p-7 sm:p-8 rounded-3xl bg-zinc-900/90 border border-zinc-800 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+      <div className="fixed inset-0 w-full h-[100dvh] bg-[#121314] text-zinc-100 flex flex-col items-center justify-center p-3 xs:p-4 sm:p-6 select-none overflow-y-auto">
+        <div className="w-full max-w-lg p-5 xs:p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-zinc-900/90 border border-zinc-800 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 my-auto">
           
-          <div className="flex items-center justify-between pb-5 border-b border-zinc-800">
+          <div className="flex items-center justify-between pb-4 sm:pb-5 border-b border-zinc-800">
             <div>
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
                 Zen Focus Setup
               </span>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-100 tracking-tight mt-0.5">
+              <h2 className="text-lg xs:text-xl sm:text-2xl font-extrabold text-zinc-100 tracking-tight mt-0.5">
                 Configure Your Session
               </h2>
             </div>
@@ -450,7 +450,7 @@ function FocusModeContent() {
   return (
     <div
       onClick={() => inputRef.current?.focus()}
-      className="fixed inset-0 w-full h-full bg-[#121314] text-zinc-100 flex flex-col items-center justify-between p-6 sm:p-12 select-none overflow-hidden cursor-text"
+      className="fixed inset-0 w-full h-[100dvh] bg-[#121314] text-zinc-100 flex flex-col items-center justify-between p-4 xs:p-6 sm:p-12 select-none overflow-hidden cursor-text"
     >
       {/* Hidden input capturing typing */}
       <input
@@ -483,7 +483,7 @@ function FocusModeContent() {
 
         {/* Minimal Timer strictly centered at top */}
         <div className="flex flex-col items-center">
-          <span className="font-mono text-3xl sm:text-4xl font-bold text-amber-400 tracking-tight">
+          <span className="font-mono text-2xl xs:text-3xl sm:text-4xl font-bold text-amber-400 tracking-tight">
             {timeLeft}s
           </span>
           {isUnlimited && isStarted && !isFinished && (
@@ -499,11 +499,11 @@ function FocusModeContent() {
         </div>
 
         {/* Right tools (Fullscreen + Mute) */}
-        <div className="flex items-center gap-3 opacity-40 hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-2 sm:gap-3 opacity-40 hover:opacity-100 transition-opacity">
           <button
             type="button"
             onClick={toggleMute}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
             title={isMuted ? 'Unmute sound' : 'Mute sound'}
           >
             {isMuted || volume === 0 ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
@@ -512,7 +512,7 @@ function FocusModeContent() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer hidden xs:inline-block"
             title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -525,7 +525,7 @@ function FocusModeContent() {
         {!isFinished ? (
           <div
             ref={textContainerRef}
-            className="h-44 sm:h-56 overflow-hidden font-mono text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-wide select-none text-zinc-500 transition-all text-left"
+            className="h-36 sm:h-56 overflow-hidden font-mono text-xl xs:text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-wide select-none text-zinc-500 transition-all text-left"
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
