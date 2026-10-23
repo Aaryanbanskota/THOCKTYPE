@@ -382,11 +382,11 @@ export function GlobalShortcuts() {
             {/* Modal Footer CTA */}
             <div className="mt-8 pt-4 border-t border-zinc-800 flex items-center justify-between">
               <Link
-                href="/shortcuts"
+                href="/learn-more#shortcuts-deck"
                 onClick={() => setIsModalOpen(false)}
                 className="text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1.5"
               >
-                <span>View Full Visual Keyboard Guide</span>
+                <span>View Full Features & Shortcuts Deck</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <button

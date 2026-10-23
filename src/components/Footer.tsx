@@ -68,11 +68,11 @@ export function Footer() {
               </li>
               <li className="pt-2">
                 <Link
-                  href="/shortcuts"
+                  href="/learn-more"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-sans font-semibold transition-all hover:scale-105"
                 >
                   <Keyboard className="w-3.5 h-3.5" />
-                  <span>View All Shortcuts →</span>
+                  <span>Features & Shortcuts →</span>
                 </Link>
               </li>
             </ul>
@@ -82,6 +82,11 @@ export function Footer() {
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Compliance & Docs</h4>
             <ul className="text-xs space-y-1.5">
+              <li>
+                <Link href="/learn-more" className="hover:text-amber-400 transition-colors font-medium text-zinc-300">
+                  Features & Architecture Guide
+                </Link>
+              </li>
               <li>
                 <Link href="/privacy" className="hover:text-amber-400 transition-colors">
                   Privacy Policy (Zero Telemetry)
@@ -113,6 +118,8 @@ export function Footer() {
             <Link href="/test" className="hover:text-zinc-300">Typing Test</Link>
             <span>•</span>
             <Link href="/sounds" className="hover:text-zinc-300">Sound Lab</Link>
+            <span>•</span>
+            <Link href="/learn-more" className="hover:text-zinc-300">Learn More</Link>
             <span>•</span>
             <Link href="/shortcuts" className="hover:text-zinc-300">Shortcuts</Link>
             <span>•</span>
