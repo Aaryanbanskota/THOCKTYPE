@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
-import { generateRandomWords } from '@/lib/word-banks';
-import { SoundPackId, TestResults, WpmDataPoint } from '@/types/sound';
+import { generateRandomWords, generateTextByDifficulty } from '@/lib/word-banks';
+import { SoundPackId, TestResults, WpmDataPoint, DifficultyMode } from '@/types/sound';
 import {
   RotateCcw,
   ShieldAlert,
@@ -22,7 +22,10 @@ import {
   Activity,
   Layers,
   Sparkles,
-  Command
+  Command,
+  SignalLow,
+  SignalMedium,
+  SignalHigh
 } from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
@@ -36,6 +39,7 @@ export function TypingTest() {
   const [mode, setMode] = useState<TestMode>('time');
   const [duration, setDuration] = useState<number>(60); // 15, 30, 60, 90
   const [wordTarget, setWordTarget] = useState<number>(50); // 25, 50, 100
+  const [difficulty, setDifficulty] = useState<DifficultyMode>('easy'); // easy, medium, hard
   const [competitive, setCompetitive] = useState<boolean>(false);
 
   // Words & Text State
@@ -76,9 +80,9 @@ export function TypingTest() {
     } else if (mode === 'unlimited') {
       wordCount = 120;
     }
-    const newWords = generateRandomWords(wordCount);
+    const newWords = generateTextByDifficulty(difficulty, wordCount);
     setWords(newWords);
-  }, [mode, duration, wordTarget]);
+  }, [mode, duration, wordTarget, difficulty]);
 
   // Reset test to clean initial state
   const resetTest = useCallback(() => {
@@ -179,6 +183,7 @@ export function TypingTest() {
       rawWpm: finalRawWpm,
       accuracy: finalAcc,
       timeSpent: seconds,
+      difficulty,
       correctChars,
       incorrectChars,
       extraChars,
@@ -252,7 +257,7 @@ export function TypingTest() {
 
     // Infinite word stream in unlimited mode
     if (mode === 'unlimited' && val.length > fullText.length - 80) {
-      setWords((prev) => [...prev, ...generateRandomWords(50)]);
+      setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 50)]);
     }
 
     // In words mode: finish when target reached
@@ -359,6 +364,7 @@ export function TypingTest() {
     const text = `⌨️ THOCKTYPE SPEED TEST RESULT
 WPM: ${results.wpm} (Raw: ${results.rawWpm})
 Accuracy: ${results.accuracy}%
+Difficulty: ${results.difficulty.toUpperCase()}
 Time: ${results.timeSpent}s | Consistency: ${results.consistency}%
 Switch: ${profile?.name} (${profile?.category})
 Try it: ${window.location.origin}`;
@@ -452,26 +458,69 @@ Try it: ${window.location.origin}`;
           </div>
         )}
 
-        {/* Active Sound Quick-Picker & Focus Mode Button */}
+        {/* Right Section: Difficulty Mode, Switch Icon (compact, no text), Zen Focus */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60 text-xs">
-            <SwitchIcon
-              id={activePack}
-              className="w-3.5 h-3.5 shrink-0"
-              style={{ color: currentProfile?.color }}
-            />
-            <span className="font-medium text-zinc-200">{currentProfile?.name}</span>
+          {/* Difficulty Mode Selector: Small icon buttons (easy, medium, hard) */}
+          <div className="flex items-center bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
+            {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => {
+              const isSelected = difficulty === d;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficulty(d)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    isSelected
+                      ? d === 'easy'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold shadow-sm'
+                        : d === 'medium'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                  title={`${d.toUpperCase()} mode: ${
+                    d === 'easy' ? 'Clean lowercase text' : d === 'medium' ? 'Punctuation & commas' : 'Numbers, symbols & full key practice'
+                  }`}
+                >
+                  {d === 'easy' && <SignalLow className="w-3 h-3 text-emerald-400" />}
+                  {d === 'medium' && <SignalMedium className="w-3 h-3 text-amber-400" />}
+                  {d === 'hard' && <SignalHigh className="w-3 h-3 text-rose-400" />}
+                  <span className="text-[11px] capitalize">{d}</span>
+                </button>
+              );
+            })}
           </div>
 
+          {/* Active Sound Personality: Compact Icon Tile only (No text, as requested) */}
+          <button
+            type="button"
+            onClick={() => {
+              const currentIndex = PACK_IDS.indexOf(activePack);
+              const nextIndex = (currentIndex + 1) % PACK_IDS.length;
+              const nextPack = PACK_IDS[nextIndex];
+              setActivePack(nextPack);
+              playKey('KeyF', nextPack);
+            }}
+            className="w-8 h-8 rounded-xl bg-zinc-950/60 hover:bg-zinc-800/80 border border-zinc-800/60 flex items-center justify-center transition-all group cursor-pointer"
+            title={`Active switch: ${currentProfile?.name} (${currentProfile?.category}) — Click to cycle sound`}
+          >
+            <SwitchIcon
+              id={activePack}
+              className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110"
+              style={{ color: currentProfile?.color }}
+            />
+          </button>
+
+          {/* Zen Focus Mode Button */}
           <a
-            href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
+            href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}&diff=${difficulty}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm hover:scale-105 active:scale-95 group"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm hover:scale-105 active:scale-95 group"
             title="Open pure Zen Focus Mode in a new tab (Shortcut: Alt + F)"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            <span>Zen Focus (New Tab) ↗</span>
+            <span className="hidden sm:inline">Zen Focus ↗</span>
           </a>
         </div>
 
@@ -761,10 +810,21 @@ Try it: ${window.location.origin}`;
             </div>
 
             <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Test Configuration</span>
-              <span className="text-zinc-200 font-bold capitalize">
-                {mode} ({mode === 'time' ? `${duration}s` : mode === 'words' ? `${wordTarget}w` : 'unlimited'})
-              </span>
+              <span className="text-zinc-400 block text-[11px] mb-1">Configuration & Difficulty</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-zinc-200 font-bold capitalize">
+                  {mode} ({mode === 'time' ? `${duration}s` : mode === 'words' ? `${wordTarget}w` : 'unlimited'})
+                </span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold uppercase tracking-wider ${
+                  (results?.difficulty || difficulty) === 'easy'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : (results?.difficulty || difficulty) === 'medium'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                }`}>
+                  {results?.difficulty || difficulty}
+                </span>
+              </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">

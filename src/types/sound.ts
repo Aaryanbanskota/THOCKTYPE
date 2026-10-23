@@ -1,5 +1,7 @@
 export type SoundPackId = 's1' | 's2' | 's3' | 's4' | 's5' | 's6' | 's7' | 's8';
 
+export type DifficultyMode = 'easy' | 'medium' | 'hard';
+
 export interface SwitchProfile {
   id: SoundPackId;
   name: string;
@@ -29,6 +31,7 @@ export interface TestSettings {
   mode: 'time' | 'words' | 'unlimited';
   duration: 15 | 30 | 60 | 90;
   wordCount: 25 | 50 | 100;
+  difficulty: DifficultyMode;
   competitive: boolean;
   soundPack: SoundPackId;
 }
@@ -45,6 +48,7 @@ export interface TestResults {
   rawWpm: number;
   accuracy: number;
   timeSpent: number;
+  difficulty: DifficultyMode;
   correctChars: number;
   incorrectChars: number;
   extraChars: number;

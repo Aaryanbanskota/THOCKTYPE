@@ -4,8 +4,8 @@ import React, { Suspense, useState, useEffect, useRef, useCallback, useMemo } fr
 import { useSearchParams } from 'next/navigation';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
-import { generateRandomWords } from '@/lib/word-banks';
-import { SoundPackId } from '@/types/sound';
+import { generateRandomWords, generateTextByDifficulty } from '@/lib/word-banks';
+import { SoundPackId, DifficultyMode } from '@/types/sound';
 import {
   Maximize2,
   Minimize2,
@@ -16,7 +16,10 @@ import {
   Square,
   Play,
   Flame,
-  Check
+  Check,
+  SignalLow,
+  SignalMedium,
+  SignalHigh
 } from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
@@ -30,6 +33,7 @@ function FocusModeContent() {
   // Settings from query params or defaults
   const paramDuration = searchParams.get('duration');
   const paramPack = searchParams.get('pack') as SoundPackId | null;
+  const paramDiff = searchParams.get('diff') as DifficultyMode | null;
 
   // If user came with explicit query params from another page, skip setup
   const hasDirectParams = paramDuration !== null || paramPack !== null;
@@ -45,6 +49,7 @@ function FocusModeContent() {
     paramDuration ? parseInt(paramDuration, 10) : 60
   );
   const [selectedWords, setSelectedWords] = useState<number>(50);
+  const [difficulty, setDifficulty] = useState<DifficultyMode>(paramDiff || 'easy');
 
   const isUnlimited = selectedMode === 'unlimited';
   const initialDuration = isUnlimited ? 0 : selectedDuration;
@@ -85,8 +90,8 @@ function FocusModeContent() {
     } else {
       count = Math.max(80, Math.floor(selectedDuration * 2.5));
     }
-    setWords(generateRandomWords(count));
-  }, [selectedMode, selectedWords, selectedDuration]);
+    setWords(generateTextByDifficulty(difficulty, count));
+  }, [selectedMode, selectedWords, selectedDuration, difficulty]);
 
   // Reset test
   const resetTest = useCallback(() => {
@@ -160,7 +165,7 @@ function FocusModeContent() {
 
     // Continuous word streaming for unlimited mode
     if (isUnlimited && val.length > fullText.length - 80) {
-      setWords((prev) => [...prev, ...generateRandomWords(50)]);
+      setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 50)]);
     }
 
     // Words mode completion
@@ -338,10 +343,45 @@ function FocusModeContent() {
             )}
           </div>
 
-          {/* 2. Switch Personality Selection */}
+          {/* 2. Difficulty Mode Selection */}
           <div className="mt-6 space-y-2">
             <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
-              2. Select Mechanical Switch Sound
+              2. Choose Practice Difficulty
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficulty(d)}
+                  className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-xl border text-center transition-all cursor-pointer ${
+                    difficulty === d
+                      ? d === 'easy'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm font-bold'
+                        : d === 'medium'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm font-bold'
+                        : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm font-bold'
+                      : 'bg-zinc-950/60 hover:bg-zinc-800/40 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    {d === 'easy' && <SignalLow className="w-3.5 h-3.5 text-emerald-400" />}
+                    {d === 'medium' && <SignalMedium className="w-3.5 h-3.5 text-amber-400" />}
+                    {d === 'hard' && <SignalHigh className="w-3.5 h-3.5 text-rose-400" />}
+                    <span className="text-xs font-mono capitalize">{d}</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-400 leading-tight">
+                    {d === 'easy' ? 'Plain words' : d === 'medium' ? 'Commas & text' : 'Full key workout'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. Switch Personality Selection */}
+          <div className="mt-6 space-y-2">
+            <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
+              3. Select Mechanical Switch Sound
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {PACK_IDS.map((id) => {
@@ -509,7 +549,7 @@ function FocusModeContent() {
         ) : (
           /* Finished State: Minimal results */
           <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-12 font-mono">
+            <div className="flex items-center gap-8 sm:gap-12 font-mono">
               <div>
                 <div className="text-xs uppercase text-zinc-500">WPM</div>
                 <div className="text-5xl sm:text-6xl font-bold text-amber-400 mt-1">{finalWpm}</div>
@@ -517,6 +557,15 @@ function FocusModeContent() {
               <div>
                 <div className="text-xs uppercase text-zinc-500">Accuracy</div>
                 <div className="text-5xl sm:text-6xl font-bold text-emerald-400 mt-1">{finalAccuracy}%</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-zinc-500">Difficulty</div>
+                <div className="text-base sm:text-lg font-bold text-zinc-300 mt-4 capitalize flex items-center gap-1.5 justify-center">
+                  {difficulty === 'easy' && <SignalLow className="w-4 h-4 text-emerald-400" />}
+                  {difficulty === 'medium' && <SignalMedium className="w-4 h-4 text-amber-400" />}
+                  {difficulty === 'hard' && <SignalHigh className="w-4 h-4 text-rose-400" />}
+                  <span>{difficulty}</span>
+                </div>
               </div>
             </div>
 
