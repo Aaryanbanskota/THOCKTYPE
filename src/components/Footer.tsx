@@ -1,8 +1,18 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Keyboard, Headphones, Cpu, Sparkles } from 'lucide-react';
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // Hide in Focus / Zen mode
+  if (pathname?.startsWith('/focus')) {
+    return null;
+  }
+
   return (
     <footer className="w-full border-t border-zinc-800/80 bg-zinc-950 text-zinc-400 py-10 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

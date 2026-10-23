@@ -13,6 +13,11 @@ export function Header() {
   const { activePack, setActivePack, volume, setVolume, isMuted, toggleMute, playKey } = useSound();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Hide in Focus / Zen mode
+  if (pathname?.startsWith('/focus')) {
+    return null;
+  }
+
   const currentProfile = SWITCH_PROFILES[activePack];
 
   return (

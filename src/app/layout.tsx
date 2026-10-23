@@ -39,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark antialiased`}>
-      <body className="min-h-screen flex flex-col bg-[#121314] text-zinc-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark antialiased`} suppressHydrationWarning>
+      <body suppressHydrationWarning className="min-h-screen flex flex-col bg-[#121314] text-zinc-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
         <SoundProvider>
           <Header />
           <main className="flex-1 flex flex-col">{children}</main>
