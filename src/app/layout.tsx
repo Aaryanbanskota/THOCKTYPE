@@ -4,6 +4,7 @@ import './globals.css';
 import { SoundProvider } from '@/context/sound-context';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { GlobalShortcuts } from '@/components/GlobalShortcuts';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -54,6 +55,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark antialiased`} suppressHydrationWarning>
       <body suppressHydrationWarning className="min-h-screen flex flex-col bg-[#121314] text-zinc-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
         <SoundProvider>
+          <GlobalShortcuts />
           <Header />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />

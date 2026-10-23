@@ -59,33 +59,43 @@ export function Footer() {
                 <kbd className="px-1.5 py-0.5 text-[10px] bg-zinc-900 border border-zinc-700 rounded text-zinc-300">Tab + Enter</kbd>
               </li>
               <li className="flex items-center justify-between">
-                <span>Reset / Pause</span>
-                <kbd className="px-1.5 py-0.5 text-[10px] bg-zinc-900 border border-zinc-700 rounded text-zinc-300">Esc</kbd>
+                <span>Zen Focus</span>
+                <kbd className="px-1.5 py-0.5 text-[10px] bg-zinc-900 border border-zinc-700 rounded text-zinc-300">Alt + F</kbd>
               </li>
               <li className="flex items-center justify-between">
-                <span>Switch Sounds</span>
-                <kbd className="px-1.5 py-0.5 text-[10px] bg-zinc-900 border border-zinc-700 rounded text-zinc-300">Dropdown</kbd>
+                <span>Hot-Swap</span>
+                <kbd className="px-1.5 py-0.5 text-[10px] bg-zinc-900 border border-zinc-700 rounded text-zinc-300">Alt + 1..8</kbd>
+              </li>
+              <li className="pt-1">
+                <Link href="/shortcuts" className="text-amber-400 hover:text-amber-300 text-[11px] font-sans font-medium flex items-center gap-1">
+                  View Full Shortcut Deck →
+                </Link>
               </li>
             </ul>
           </div>
 
-          {/* Col 3: Navigation */}
+          {/* Col 3: Navigation & Legal */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Explore</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Compliance & Docs</h4>
             <ul className="text-xs space-y-1.5">
               <li>
-                <Link href="/test" className="hover:text-amber-400 transition-colors">
-                  Typing Speed & Accuracy Test
+                <Link href="/privacy" className="hover:text-amber-400 transition-colors">
+                  Privacy Policy (Zero Telemetry)
                 </Link>
               </li>
               <li>
-                <Link href="/sounds" className="hover:text-amber-400 transition-colors">
-                  Interactive Sound Lab & Tester
+                <Link href="/terms" className="hover:text-amber-400 transition-colors">
+                  Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/#lineup" className="hover:text-amber-400 transition-colors">
-                  The Eight Sound Personalities
+                <Link href="/license" className="hover:text-amber-400 transition-colors">
+                  MIT Open Source License
+                </Link>
+              </li>
+              <li>
+                <Link href="/shortcuts" className="hover:text-amber-400 transition-colors">
+                  Interactive Key Bindings
                 </Link>
               </li>
             </ul>
@@ -95,10 +105,18 @@ export function Footer() {
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <p className="text-center sm:text-left">© 2026 THOCKTYPE • Open mechanical typing laboratory. No sign-up required.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <Link href="/test" className="hover:text-zinc-300">Typing Test</Link>
             <span>•</span>
             <Link href="/sounds" className="hover:text-zinc-300">Sound Lab</Link>
+            <span>•</span>
+            <Link href="/shortcuts" className="hover:text-zinc-300">Shortcuts</Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-zinc-300">Privacy</Link>
+            <span>•</span>
+            <Link href="/terms" className="hover:text-zinc-300">Terms</Link>
+            <span>•</span>
+            <Link href="/license" className="hover:text-zinc-300">License</Link>
           </div>
         </div>
       </div>

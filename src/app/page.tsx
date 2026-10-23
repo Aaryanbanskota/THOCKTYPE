@@ -69,30 +69,42 @@ export default function HomePage() {
         </p>
 
         {/* Direct Action Hub */}
-        <div className="mt-5 sm:mt-6 w-full flex flex-col xs:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+        <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
           <Link
             href="/test"
-            className="w-full xs:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-md shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             <Flame className="w-4 h-4 fill-zinc-950" />
-            <span>Launch Typing Test (60s)</span>
+            <span>Launch Typing Test</span>
+            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-amber-600/30 text-amber-950 text-[10px] font-mono font-bold">Alt+T</kbd>
           </Link>
 
           <Link
             href="/focus"
-            className="w-full xs:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
             title="Open pure distraction-free Zen Focus mode"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
-            <span>Zen Focus (Alt + F)</span>
+            <span>Zen Focus</span>
+            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono">Alt+F</kbd>
           </Link>
 
           <Link
             href="/sounds"
-            className="w-full xs:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             <Radio className="w-3.5 h-3.5 text-sky-400" />
             <span>Sound Studio</span>
+            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono">Alt+S</kbd>
+          </Link>
+
+          <Link
+            href="/shortcuts"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-xs tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <KeyboardIcon className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Shortcuts</span>
+            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono">?</kbd>
           </Link>
         </div>
 
@@ -126,18 +138,23 @@ export default function HomePage() {
                     setActivePack(id);
                     playKey('KeyF', id);
                   }}
-                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all ${
+                  className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all ${
                     isSelected
                       ? 'bg-zinc-800 text-zinc-100 shadow-md ring-1 ring-zinc-700'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                   }`}
                   style={{
-                    borderColor: isSelected ? pack.color : undefined
+                    borderColor: isSelected ? pack.color : undefined,
+                    boxShadow: isSelected ? `0 0 12px ${pack.color}25` : undefined
                   }}
+                  title={`${pack.name} (Alt + ${index + 1})`}
                 >
+                  <span className="absolute top-1 right-1.5 text-[9px] font-mono text-zinc-500 opacity-60">
+                    {index + 1}
+                  </span>
                   <SwitchIcon
                     id={id}
-                    className="w-3.5 h-3.5 mb-1 shrink-0"
+                    className="w-4 h-4 mb-1 shrink-0"
                     style={{ color: pack.color }}
                   />
                   <span className="truncate max-w-full text-center text-[10px] font-mono leading-tight">

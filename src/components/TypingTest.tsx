@@ -132,6 +132,15 @@ export function TypingTest() {
     resetTest();
   }, [resetTest]);
 
+  // Global restart event listener from shortcuts manager (Tab+Enter, Shift+Enter)
+  useEffect(() => {
+    const handleRestartEvent = () => {
+      resetTest();
+    };
+    window.addEventListener('thocktype:restart-test', handleRestartEvent);
+    return () => window.removeEventListener('thocktype:restart-test', handleRestartEvent);
+  }, [resetTest]);
+
   // Calculate live stats with high precision
   const calculateLiveStats = useCallback((currInput: string, seconds: number) => {
     if (seconds <= 0) return;
@@ -449,12 +458,18 @@ export function TypingTest() {
       }
     };
 
+    const onRestartEvent = () => {
+      resetTest();
+    };
+
     window.addEventListener('keydown', onGlobalKeyDown);
     window.addEventListener('keyup', onGlobalKeyUp);
+    window.addEventListener('thocktype:restart-test', onRestartEvent);
 
     return () => {
       window.removeEventListener('keydown', onGlobalKeyDown);
       window.removeEventListener('keyup', onGlobalKeyUp);
+      window.removeEventListener('thocktype:restart-test', onRestartEvent);
     };
   }, [resetTest, mode, isStarted, isFinished, input, elapsedSeconds, duration, activePack, setActivePack, playKey, finishTest]);
 

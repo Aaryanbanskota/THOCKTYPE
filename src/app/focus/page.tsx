@@ -119,6 +119,15 @@ function FocusModeContent() {
     }
   }, [isConfigured, resetTest]);
 
+  // Global restart event listener from shortcuts manager (Tab+Enter, Shift+Enter)
+  useEffect(() => {
+    const handleRestartEvent = () => {
+      resetTest();
+    };
+    window.addEventListener('thocktype:restart-test', handleRestartEvent);
+    return () => window.removeEventListener('thocktype:restart-test', handleRestartEvent);
+  }, [resetTest]);
+
   // Finish test with exact timing and error penalty
   const finishTest = useCallback((finalInput: string, seconds: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -231,11 +240,17 @@ function FocusModeContent() {
       if (e.key === 'Tab') tabDown = false;
     };
 
+    const onRestartEvent = () => {
+      resetTest();
+    };
+
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('thocktype:restart-test', onRestartEvent);
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('thocktype:restart-test', onRestartEvent);
     };
   }, [resetTest, isConfigured, isUnlimited, isStarted, isFinished, input, timeLeft, finishTest]);
 
