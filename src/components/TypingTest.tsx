@@ -423,11 +423,11 @@ Try it: ${window.location.origin}`;
             href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-all shadow-sm group"
-            title="Open pure Zen Focus Mode in new tab (no navbar, no metrics, timer at top)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold transition-all shadow-md shadow-amber-500/10 hover:scale-105 active:scale-95 group"
+            title="Open pure Zen Focus Mode in new tab (no navbar, no metrics, timer at top only)"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            <span>Zen Mode ↗</span>
+            <span>Focus Mode ↗</span>
           </a>
         </div>
 
@@ -557,11 +557,11 @@ Try it: ${window.location.origin}`;
               href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-300 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
-              title="Open pure full-screen Zen typing in new tab"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 text-xs font-bold tracking-wide border border-amber-500/40 shadow-md shadow-amber-500/10 transition-all hover:scale-105 active:scale-95"
+              title="Open pure full-screen textbox only in a new tab"
             >
               <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
-              <span>Zen Focus (New Tab)</span>
+              <span>Open Focus Mode (New Tab) ↗</span>
             </a>
 
           </div>
