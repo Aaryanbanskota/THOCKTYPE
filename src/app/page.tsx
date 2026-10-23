@@ -12,19 +12,18 @@ import {
   Radio,
   Play,
   Volume2,
-  Sparkles,
+  Maximize2,
   ArrowRight,
-  Headphones,
-  Zap,
-  Gauge,
-  SlidersHorizontal
+  Terminal,
+  SlidersHorizontal,
+  Keyboard as KeyboardIcon
 } from 'lucide-react';
 
 export default function HomePage() {
   const { activePack, setActivePack, playKey } = useSound();
   const [playingPreview, setPlayingPreview] = useState<SoundPackId | null>(null);
 
-  // Play a natural keystroke sequence for a switch preview
+  // Audition switch keystroke sequence
   const previewSwitch = (packId: SoundPackId) => {
     setActivePack(packId);
     setPlayingPreview(packId);
@@ -34,9 +33,9 @@ export default function HomePage() {
       setTimeout(() => {
         playKey(k, packId);
         if (idx === keys.length - 1) {
-          setTimeout(() => setPlayingPreview(null), 250);
+          setTimeout(() => setPlayingPreview(null), 240);
         }
-      }, idx * 115);
+      }, idx * 110);
     });
   };
 
@@ -45,71 +44,78 @@ export default function HomePage() {
   return (
     <div className="w-full flex flex-col items-center">
       
-      {/* 1. Hero Section */}
-      <section className="relative w-full pt-14 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto flex flex-col items-center text-center">
+      {/* 1. Tactical Industrial Masthead & Live Workbench */}
+      <section className="relative w-full pt-10 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
         
-        {/* Ambient atmospheric glow */}
-        <div
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[320px] rounded-full blur-[150px] opacity-15 pointer-events-none transition-colors duration-700"
-          style={{ backgroundColor: currentProfile?.color }}
-        />
-
-        {/* Eyebrow Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs font-mono text-zinc-300 mb-6 shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span>Eight sounds. Eight personalities.</span>
+        {/* Terminal Header Info */}
+        <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-4">
+          <span className="flex items-center gap-1.5 text-amber-400 font-bold">
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            TYPELOUDER // THOCKTYPE
+          </span>
+          <span>•</span>
+          <span>Open Acoustic Lab</span>
+          <span>•</span>
+          <span className="text-zinc-400">Zero Signup</span>
         </div>
 
-        {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-zinc-100 max-w-3xl leading-[1.12]">
-          Feel every keystroke.{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500">
-            Hear every switch.
-          </span>
+        {/* Main Headline */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-zinc-100 tracking-tight max-w-2xl leading-[1.15]">
+          Mechanical switch sound test & typing speed lab.
         </h1>
 
-        {/* Hero Subtitle */}
-        <p className="mt-4 text-sm sm:text-base text-zinc-400 max-w-xl leading-relaxed">
-          Authentic mechanical keyboard acoustics right in your browser. Multi-sample recordings, physical spring return physics, and speed-responsive resonance.
+        <p className="mt-3 text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
+          Eight switch recordings with dedicated spacebar stabilizers and spring return acoustics. Type on the keyboard below or jump into a benchmark.
         </p>
 
-        {/* Clean Primary Actions */}
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
+        {/* Direct Action Hub */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/test"
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-md shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
           >
             <Flame className="w-4 h-4 fill-zinc-950" />
-            <span>Start Typing Test (60s)</span>
+            <span>Launch Typing Test (60s)</span>
+          </Link>
+
+          <Link
+            href="/focus"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
+            title="Open pure distraction-free Zen Focus mode"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>Zen Focus (Alt + F)</span>
           </Link>
 
           <Link
             href="/sounds"
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 font-semibold text-xs sm:text-sm tracking-wide shadow-md transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 font-semibold text-xs tracking-wide shadow-sm transition-all hover:scale-105 active:scale-95"
           >
-            <Radio className="w-4 h-4 text-amber-400" />
-            <span>Acoustic Sound Lab</span>
+            <Radio className="w-3.5 h-3.5 text-sky-400" />
+            <span>Sound Studio</span>
           </Link>
         </div>
 
-        {/* 2. Interactive Keyboard Testbench with Integrated Switch Dock */}
-        <div className="mt-12 w-full max-w-4xl flex flex-col items-center">
+        {/* 2. Interactive Mechanical Workbench */}
+        <div className="mt-10 w-full flex flex-col items-center">
           
-          {/* Integrated Switch Dock along top of keyboard */}
-          <div className="w-full flex items-center justify-between pb-3 px-2 text-xs font-mono">
+          {/* Switch Dock Header */}
+          <div className="w-full flex items-center justify-between pb-2.5 px-2 text-xs font-mono">
             <div className="flex items-center gap-2 text-zinc-400">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-              <span>HOT-SWAP SWITCH:</span>
+              <SwitchIcon id={activePack} className="w-3.5 h-3.5" style={{ color: currentProfile?.color }} />
+              <span className="text-zinc-500">ACTIVE:</span>
               <span className="text-zinc-200 font-bold">{currentProfile?.name}</span>
+              <span className="text-[10px] text-zinc-500">({currentProfile?.category})</span>
             </div>
-            <span className="text-[11px] text-zinc-500 hidden sm:inline">
-              Press any key on your keyboard to hear
-            </span>
+            <div className="text-[11px] text-zinc-500 hidden sm:flex items-center gap-2">
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px]">Alt + 1..8</kbd>
+              <span>Hot-swap switch</span>
+            </div>
           </div>
 
-          {/* Switch Selector Strip integrated directly with keyboard */}
-          <div className="w-full grid grid-cols-4 sm:grid-cols-8 gap-1.5 p-1.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 mb-3 backdrop-blur-sm shadow-md">
-            {PACK_IDS.map((id) => {
+          {/* Hot-Swap Switch Selector Deck */}
+          <div className="w-full grid grid-cols-4 sm:grid-cols-8 gap-1.5 p-1.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 mb-3 shadow-md">
+            {PACK_IDS.map((id, index) => {
               const pack = SWITCH_PROFILES[id];
               const isSelected = activePack === id;
               return (
@@ -123,7 +129,7 @@ export default function HomePage() {
                   className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all ${
                     isSelected
                       ? 'bg-zinc-800 text-zinc-100 shadow-md ring-1 ring-zinc-700'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                   }`}
                   style={{
                     borderColor: isSelected ? pack.color : undefined
@@ -134,7 +140,7 @@ export default function HomePage() {
                     className="w-3.5 h-3.5 mb-1 shrink-0"
                     style={{ color: pack.color }}
                   />
-                  <span className="truncate max-w-full text-center leading-tight">
+                  <span className="truncate max-w-full text-center text-[10px] font-mono leading-tight">
                     {pack.name.split(' ')[0]}
                   </span>
                 </button>
@@ -142,31 +148,33 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* Live Virtual Mechanical Keyboard */}
+          {/* Virtual 65% Mechanical Keyboard */}
           <VirtualKeyboard interactiveGlobal={true} />
 
         </div>
 
       </section>
 
-      {/* 3. The 8 Switch Personalities Showcase Grid */}
-      <section id="lineup" className="w-full py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-zinc-800/60">
+      {/* 3. The 8 Switch Sound Catalog (#lineup) */}
+      <section id="lineup" className="w-full py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-zinc-800/70">
         
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-mono mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>The Sound Profiles</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 uppercase tracking-widest mb-1">
+              <Terminal className="w-3.5 h-3.5 text-amber-400" />
+              <span>Switch Catalog</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight">
+              Eight sounds. Eight personalities.
+            </h2>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-zinc-100 tracking-tight">
-            Eight sounds. Eight personalities.
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-zinc-400">
-            Compare acoustic dynamics side by side. Click test sound to audition each profile.
+          <p className="text-xs font-mono text-zinc-400 max-w-xs text-left sm:text-right">
+            Compare acoustic signatures. Press Audition to sample the typing cadence.
           </p>
         </div>
 
-        {/* 8 Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* The 8 Clean Catalog Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {PACK_IDS.map((id) => {
             const pack = SWITCH_PROFILES[id];
             const isSelected = activePack === id;
@@ -175,19 +183,16 @@ export default function HomePage() {
             return (
               <div
                 key={id}
-                className={`flex flex-col justify-between p-5 rounded-2xl bg-zinc-900/40 border transition-all duration-200 hover:bg-zinc-900/70 ${
+                className={`flex flex-col justify-between p-5 rounded-2xl border transition-all duration-150 ${
                   isSelected
-                    ? 'border-zinc-500 ring-1 ring-zinc-700 shadow-xl'
-                    : 'border-zinc-800/80 hover:border-zinc-700'
+                    ? 'bg-zinc-900/90 border-zinc-600 ring-1 ring-zinc-700 shadow-xl'
+                    : 'bg-zinc-900/40 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/60'
                 }`}
-                style={{
-                  boxShadow: isSelected ? `0 6px 24px ${pack.color}20` : undefined
-                }}
               >
                 <div>
                   {/* Category & Pitch Badge */}
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <SwitchIcon
                         id={id}
                         className="w-4 h-4 shrink-0"
@@ -197,28 +202,28 @@ export default function HomePage() {
                         {pack.category}
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-800/80">
-                      {pack.pitch} Pitch
+                    <span className="text-[10px] font-mono text-zinc-500 px-2 py-0.5 rounded bg-zinc-950/80">
+                      {pack.pitch}
                     </span>
                   </div>
 
                   {/* Title & Tagline */}
-                  <h3 className="text-lg font-bold text-zinc-100 mb-0.5">
+                  <h3 className="text-base font-bold text-zinc-100 mb-0.5">
                     {pack.name}
                   </h3>
-                  <p className="text-[11px] font-medium text-amber-400/90 mb-3">
+                  <p className="text-[11px] font-medium text-amber-400/90 mb-3 font-mono">
                     {pack.tagline}
                   </p>
 
-                  {/* Description from prompt */}
+                  {/* Prompt Text Description */}
                   <p className="text-xs text-zinc-400 leading-relaxed">
                     {pack.description}
                   </p>
                 </div>
 
-                {/* Specs and Play Action */}
-                <div className="mt-5 pt-3.5 border-t border-zinc-800/80 space-y-2.5">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
+                {/* Specs and Audition Button */}
+                <div className="mt-5 pt-3.5 border-t border-zinc-800/80 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
                     <span>{pack.actuation}</span>
                     <span>{pack.loudness}</span>
                   </div>
@@ -227,23 +232,23 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => previewSwitch(id)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all ${
                         isPlaying
                           ? 'bg-amber-400 text-zinc-950 font-bold shadow-md'
                           : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200'
                       }`}
                     >
                       <Play className={`w-3 h-3 ${isPlaying ? 'fill-zinc-950' : 'fill-zinc-300'}`} />
-                      <span>{isPlaying ? 'Auditioning...' : 'Test Sound'}</span>
+                      <span>{isPlaying ? 'Playing...' : 'Audition'}</span>
                     </button>
 
                     <Link
                       href="/test"
                       onClick={() => setActivePack(id)}
-                      className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-400 transition-colors"
-                      title="Type with this switch in typing test"
+                      className="p-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-400 transition-colors"
+                      title="Type with this switch in test"
                     >
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
                 </div>
@@ -255,62 +260,34 @@ export default function HomePage() {
 
       </section>
 
-      {/* 4. Feature Pillars */}
-      <section className="w-full py-14 bg-zinc-950/80 border-t border-zinc-800/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/70 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
-                <Headphones className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-zinc-200">Real Switch Multi-Samples</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Authentic switch recordings with dedicated files for spacebar stabilizers, return keys, and alphanumerics.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/70 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center border border-sky-500/20">
-                <Zap className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-zinc-200">Actuation & Spring Return</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Bottom-out clacks on keydown, crisp spring reset ticks on keyup, with dynamic velocity adaptation.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/70 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-                <Gauge className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-zinc-200">Precision Typing Diagnostics</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                15s, 30s, 60s, 90s, unlimited, and word target modes with complete accuracy and WPM progression scorecards.
-              </p>
-            </div>
-
+      {/* 4. Keyboard Shortcuts Reference Deck */}
+      <section className="w-full py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto border-t border-zinc-800/70">
+        <div className="p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800/80">
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider mb-4">
+            <KeyboardIcon className="w-4 h-4 text-amber-400" />
+            <span>Studio Keyboard Shortcuts</span>
           </div>
-        </div>
-      </section>
 
-      {/* 5. Bottom Launch Banner */}
-      <section className="w-full py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-8 sm:p-10 text-center shadow-xl space-y-3">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight">
-            Ready to test your typing speed?
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto">
-            Choose any mechanical switch sound and start typing immediately. No account required.
-          </p>
-          <div className="pt-3">
-            <Link
-              href="/test"
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95"
-            >
-              <Flame className="w-4 h-4 fill-zinc-950" />
-              <span>Launch Typing Test Now</span>
-            </Link>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
+              <div className="text-zinc-500 text-[10px] mb-1">RESTART TEST</div>
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Tab + Enter</kbd>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
+              <div className="text-zinc-500 text-[10px] mb-1">ZEN FOCUS MODE</div>
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Alt + F</kbd>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
+              <div className="text-zinc-500 text-[10px] mb-1">END UNLIMITED SESSION</div>
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Esc</kbd>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60">
+              <div className="text-zinc-500 text-[10px] mb-1">HOT-SWAP SWITCH</div>
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">Alt + 1..8</kbd>
+            </div>
           </div>
         </div>
       </section>

@@ -3,12 +3,25 @@
 import React, { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSound } from '@/context/sound-context';
-import { SWITCH_PROFILES } from '@/lib/sound-profiles';
+import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
 import { generateRandomWords } from '@/lib/word-banks';
 import { SoundPackId } from '@/types/sound';
-import { Maximize2, Minimize2, RotateCcw, ArrowLeft, Volume2, VolumeX, Square } from 'lucide-react';
+import {
+  Maximize2,
+  Minimize2,
+  RotateCcw,
+  ArrowLeft,
+  Volume2,
+  VolumeX,
+  Square,
+  Play,
+  Flame,
+  Check
+} from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
+
+type FocusModeType = 'time' | 'words' | 'unlimited';
 
 function FocusModeContent() {
   const searchParams = useSearchParams();
@@ -18,10 +31,25 @@ function FocusModeContent() {
   const paramDuration = searchParams.get('duration');
   const paramPack = searchParams.get('pack') as SoundPackId | null;
 
-  const initialDuration = paramDuration ? parseInt(paramDuration, 10) : 60;
-  const isUnlimited = initialDuration === 0;
+  // If user came with explicit query params from another page, skip setup
+  const hasDirectParams = paramDuration !== null || paramPack !== null;
 
-  const [timeLeft, setTimeLeft] = useState<number>(isUnlimited ? 0 : initialDuration);
+  // Setup modal state for users visiting /focus directly
+  const [isConfigured, setIsConfigured] = useState<boolean>(hasDirectParams);
+
+  // Focus mode configuration state
+  const [selectedMode, setSelectedMode] = useState<FocusModeType>(
+    paramDuration === '0' ? 'unlimited' : 'time'
+  );
+  const [selectedDuration, setSelectedDuration] = useState<number>(
+    paramDuration ? parseInt(paramDuration, 10) : 60
+  );
+  const [selectedWords, setSelectedWords] = useState<number>(50);
+
+  const isUnlimited = selectedMode === 'unlimited';
+  const initialDuration = isUnlimited ? 0 : selectedDuration;
+
+  const [timeLeft, setTimeLeft] = useState<number>(initialDuration);
   const [words, setWords] = useState<string[]>([]);
   const fullText = useMemo(() => words.join(' '), [words]);
 
@@ -49,9 +77,16 @@ function FocusModeContent() {
 
   // Generate words
   const initWords = useCallback(() => {
-    const count = isUnlimited ? 200 : Math.max(100, Math.floor(initialDuration * 3));
+    let count = 100;
+    if (selectedMode === 'words') {
+      count = selectedWords;
+    } else if (selectedMode === 'unlimited') {
+      count = 200;
+    } else {
+      count = Math.max(80, Math.floor(selectedDuration * 2.5));
+    }
     setWords(generateRandomWords(count));
-  }, [isUnlimited, initialDuration]);
+  }, [selectedMode, selectedWords, selectedDuration]);
 
   // Reset test
   const resetTest = useCallback(() => {
@@ -61,19 +96,21 @@ function FocusModeContent() {
     setInput('');
     setIsStarted(false);
     setIsFinished(false);
-    setTimeLeft(isUnlimited ? 0 : initialDuration);
+    setTimeLeft(isUnlimited ? 0 : selectedDuration);
     setFinalWpm(0);
     setFinalAccuracy(100);
     initWords();
 
     setTimeout(() => {
       inputRef.current?.focus();
-    }, 50);
-  }, [isUnlimited, initialDuration, initWords]);
+    }, 40);
+  }, [isUnlimited, selectedDuration, initWords]);
 
   useEffect(() => {
-    resetTest();
-  }, [resetTest]);
+    if (isConfigured) {
+      resetTest();
+    }
+  }, [isConfigured, resetTest]);
 
   // Finish test
   const finishTest = useCallback((finalInput: string, seconds: number) => {
@@ -110,7 +147,7 @@ function FocusModeContent() {
           } else {
             const next = prev - 1;
             if (next <= 0) {
-              finishTest(inputRef.current?.value || '', initialDuration);
+              finishTest(inputRef.current?.value || '', selectedDuration);
               return 0;
             }
             return next;
@@ -121,14 +158,17 @@ function FocusModeContent() {
 
     setInput(val);
 
-    // In unlimited mode: automatically stream more words as user types
+    // Continuous word streaming for unlimited mode
     if (isUnlimited && val.length > fullText.length - 80) {
       setWords((prev) => [...prev, ...generateRandomWords(50)]);
     }
 
-    if (!isUnlimited && val.length >= fullText.length) {
-      finishTest(val, initialDuration - timeLeft);
+    // Words mode completion
+    if (selectedMode === 'words' && val.length >= fullText.length) {
+      finishTest(val, timeLeft);
     }
+
+    // Time mode completion handled by timer
   };
 
   // Keyboard sounds
@@ -147,10 +187,18 @@ function FocusModeContent() {
     releaseKey(e.code);
   };
 
-  // Global key bindings (Tab + Enter, Esc)
+  // Global key bindings (Tab + Enter, Esc, Enter to start setup)
   useEffect(() => {
     let tabDown = false;
     const onKey = (e: KeyboardEvent) => {
+      if (!isConfigured) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          setIsConfigured(true);
+        }
+        return;
+      }
+
       if (e.key === 'Tab') tabDown = true;
       if (e.key === 'Enter' && tabDown) {
         e.preventDefault();
@@ -175,7 +223,7 @@ function FocusModeContent() {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [resetTest]);
+  }, [resetTest, isConfigured, isUnlimited, isStarted, isFinished, input, timeLeft, finishTest]);
 
   // Auto-scroll smooth
   useEffect(() => {
@@ -202,6 +250,154 @@ function FocusModeContent() {
 
   const currentProfile = SWITCH_PROFILES[activePack];
 
+  /* =========================================================================
+   * DIRECT VISIT SETUP CARD
+   * Rendered when a user navigates directly to /focus without URL params
+   * ========================================================================= */
+  if (!isConfigured) {
+    return (
+      <div className="fixed inset-0 w-full h-full bg-[#121314] text-zinc-100 flex flex-col items-center justify-center p-6 select-none overflow-y-auto">
+        <div className="w-full max-w-lg p-7 sm:p-8 rounded-3xl bg-zinc-900/90 border border-zinc-800 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+          
+          <div className="flex items-center justify-between pb-5 border-b border-zinc-800">
+            <div>
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
+                Zen Focus Setup
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-100 tracking-tight mt-0.5">
+                Configure Your Session
+              </h2>
+            </div>
+            <Link
+              href="/test"
+              className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+            >
+              Exit to Standard
+            </Link>
+          </div>
+
+          {/* 1. Mode Selection (Time, Words, Unlimited) */}
+          <div className="mt-6 space-y-2">
+            <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
+              1. Choose Mode
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['time', 'words', 'unlimited'] as FocusModeType[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setSelectedMode(m)}
+                  className={`py-2 px-3 rounded-xl text-xs font-mono font-semibold capitalize transition-all ${
+                    selectedMode === m
+                      ? 'bg-amber-500 text-zinc-950 font-bold shadow-md'
+                      : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            {/* Sub-options for Time / Words */}
+            {selectedMode === 'time' && (
+              <div className="grid grid-cols-4 gap-2 pt-1.5">
+                {[15, 30, 60, 90].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSelectedDuration(s)}
+                    className={`py-1.5 rounded-lg text-xs font-mono transition-all ${
+                      selectedDuration === s
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
+                        : 'bg-zinc-950/60 text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    {s}s
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selectedMode === 'words' && (
+              <div className="grid grid-cols-3 gap-2 pt-1.5">
+                {[25, 50, 100].map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => setSelectedWords(w)}
+                    className={`py-1.5 rounded-lg text-xs font-mono transition-all ${
+                      selectedWords === w
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
+                        : 'bg-zinc-950/60 text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    {w}w
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Switch Personality Selection */}
+          <div className="mt-6 space-y-2">
+            <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
+              2. Select Mechanical Switch Sound
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {PACK_IDS.map((id) => {
+                const pack = SWITCH_PROFILES[id];
+                const isSelected = activePack === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setActivePack(id);
+                      playKey('KeyF', id);
+                    }}
+                    className={`flex flex-col items-center p-2 rounded-xl border text-center transition-all ${
+                      isSelected
+                        ? 'bg-zinc-800 text-zinc-100 border-amber-500/50 ring-1 ring-amber-500/40 shadow-sm'
+                        : 'bg-zinc-950/60 hover:bg-zinc-800/40 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <SwitchIcon
+                      id={id}
+                      className="w-3.5 h-3.5 mb-1 shrink-0"
+                      style={{ color: pack.color }}
+                    />
+                    <span className="text-[11px] font-semibold truncate w-full">
+                      {pack.name.split(' ')[0]}
+                    </span>
+                    <span className="text-[9px] font-mono text-zinc-500">
+                      {pack.category}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Launch Zen Session Action Button */}
+          <div className="mt-8 pt-4 border-t border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setIsConfigured(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-98"
+            >
+              <Flame className="w-4 h-4 fill-zinc-950" />
+              <span>Enter Zen Focus Mode (Press Enter)</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================================================
+   * PURE DISTRACTION-FREE TYPING CANVAS
+   * ========================================================================= */
   return (
     <div
       onClick={() => inputRef.current?.focus()}

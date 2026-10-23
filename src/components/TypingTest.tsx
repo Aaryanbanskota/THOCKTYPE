@@ -4,9 +4,26 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
-import { generateRandomWords, KEYBOARD_QUOTES } from '@/lib/word-banks';
+import { generateRandomWords } from '@/lib/word-banks';
 import { SoundPackId, TestResults, WpmDataPoint } from '@/types/sound';
-import { RotateCcw, ShieldAlert, Award, Copy, Check, Sparkles, Volume2, ArrowRight, Maximize2, ExternalLink, Square, Pause } from 'lucide-react';
+import {
+  RotateCcw,
+  ShieldAlert,
+  Copy,
+  Check,
+  Maximize2,
+  ExternalLink,
+  Square,
+  Volume2,
+  Zap,
+  TrendingUp,
+  Target,
+  Clock,
+  Activity,
+  Layers,
+  Sparkles,
+  Command
+} from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
 
@@ -47,8 +64,6 @@ export function TypingTest() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
-
-  // Key tracking for release sound
   const pressedKeysRef = useRef<Set<string>>(new Set());
 
   // Initialize word list
@@ -58,6 +73,8 @@ export function TypingTest() {
       wordCount = wordTarget;
     } else if (mode === 'time') {
       wordCount = Math.max(80, Math.floor(duration * 2.5));
+    } else if (mode === 'unlimited') {
+      wordCount = 120;
     }
     const newWords = generateRandomWords(wordCount);
     setWords(newWords);
@@ -83,7 +100,7 @@ export function TypingTest() {
 
     setTimeout(() => {
       inputRef.current?.focus();
-    }, 50);
+    }, 40);
   }, [mode, duration, initWords]);
 
   // Initial load
@@ -175,10 +192,10 @@ export function TypingTest() {
     setResults(testResults);
 
     // Trigger celebration confetti if good score
-    if (finalNetWpm > 30) {
+    if (finalNetWpm > 25) {
       confetti({
-        particleCount: 80,
-        spread: 60,
+        particleCount: 90,
+        spread: 70,
         origin: { y: 0.6 }
       });
     }
@@ -193,7 +210,6 @@ export function TypingTest() {
     // Start timer on first keystroke
     if (!isStarted && val.length > 0) {
       setIsStarted(true);
-      const startTime = Date.now();
 
       timerRef.current = setInterval(() => {
         setElapsedSeconds((prev) => {
@@ -234,7 +250,7 @@ export function TypingTest() {
     setInput(val);
     calculateLiveStats(val, elapsedSeconds || 1);
 
-    // In unlimited mode: automatically stream more words as user types
+    // Infinite word stream in unlimited mode
     if (mode === 'unlimited' && val.length > fullText.length - 80) {
       setWords((prev) => [...prev, ...generateRandomWords(50)]);
     }
@@ -264,7 +280,7 @@ export function TypingTest() {
     releaseKey(e.code);
   };
 
-  // Global shortcut: Tab + Enter or Esc
+  // Global Keyboard Shortcuts (Tab+Enter: Restart, Alt+F: Focus Mode, Esc: Reset / Finish Unlimited, Alt+1-8: Switch sound)
   useEffect(() => {
     let tabPressed = false;
 
@@ -276,6 +292,24 @@ export function TypingTest() {
         e.preventDefault();
         resetTest();
       }
+
+      // Shortcut: Alt + F to open Focus mode in a new tab
+      if ((e.altKey || (e.ctrlKey && e.shiftKey)) && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        window.open(`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`, '_blank');
+      }
+
+      // Shortcut: Alt + 1-8 to switch sound packs
+      if (e.altKey && e.key >= '1' && e.key <= '8') {
+        const index = parseInt(e.key, 10) - 1;
+        if (PACK_IDS[index]) {
+          e.preventDefault();
+          setActivePack(PACK_IDS[index]);
+          playKey('KeyF', PACK_IDS[index]);
+        }
+      }
+
+      // Shortcut: Esc to finish unlimited session or reset
       if (e.key === 'Escape') {
         e.preventDefault();
         if (mode === 'unlimited' && isStarted && !isFinished && input.length > 0) {
@@ -299,7 +333,7 @@ export function TypingTest() {
       window.removeEventListener('keydown', onGlobalKeyDown);
       window.removeEventListener('keyup', onGlobalKeyUp);
     };
-  }, [resetTest]);
+  }, [resetTest, mode, isStarted, isFinished, input, elapsedSeconds, duration, activePack, setActivePack, playKey, finishTest]);
 
   // Keep active letter in view
   useEffect(() => {
@@ -339,7 +373,7 @@ Try it: ${window.location.origin}`;
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       
-      {/* Test Config Toolbar (Mode, Time / Words, Sound Switcher) */}
+      {/* Test Config Toolbar (Mode, Time / Words, Sound Switcher & Focus Mode CTA) */}
       <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-8 bg-zinc-900/60 p-2.5 rounded-2xl border border-zinc-800/80 backdrop-blur-sm">
         
         {/* Mode Selector (Time, Words, Unlimited) */}
@@ -418,10 +452,9 @@ Try it: ${window.location.origin}`;
           </div>
         )}
 
-        {/* Active Sound Quick-Picker & Zen Mode Link */}
+        {/* Active Sound Quick-Picker & Focus Mode Button */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60 text-xs">
-            <Volume2 className="w-3.5 h-3.5 text-zinc-400" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60 text-xs">
             <SwitchIcon
               id={activePack}
               className="w-3.5 h-3.5 shrink-0"
@@ -434,11 +467,11 @@ Try it: ${window.location.origin}`;
             href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold transition-all shadow-md shadow-amber-500/10 hover:scale-105 active:scale-95 group"
-            title="Open pure Zen Focus Mode in new tab (no navbar, no metrics, timer at top only)"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm hover:scale-105 active:scale-95 group"
+            title="Open pure Zen Focus Mode in a new tab (Shortcut: Alt + F)"
           >
             <Maximize2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            <span>Focus Mode ↗</span>
+            <span>Zen Focus (New Tab) ↗</span>
           </a>
         </div>
 
@@ -483,7 +516,7 @@ Try it: ${window.location.origin}`;
       {!isFinished ? (
         <div
           onClick={() => inputRef.current?.focus()}
-          className="group relative w-full cursor-text rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
+          className="relative w-full cursor-text rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
         >
           {/* Hidden real input that captures keystrokes */}
           <input
@@ -539,177 +572,248 @@ Try it: ${window.location.origin}`;
             })}
           </div>
 
-          {/* If unlimited mode and typing in progress: Dedicated prominent Finish Session button */}
-          {mode === 'unlimited' && isStarted && !isFinished && (
-            <div className="mt-8 flex items-center justify-center">
+          {/* If unlimited mode and typing in progress: Dedicated Pause / Finish button */}
+          {mode === 'unlimited' && isStarted && (
+            <div className="mt-8 flex items-center justify-center animate-in fade-in duration-200">
               <button
                 type="button"
                 onClick={() => finishTest(inputRef.current?.value || input, elapsedSeconds || 1)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-95 animate-pulse hover:animate-none cursor-pointer"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-95 cursor-pointer"
               >
                 <Square className="w-3.5 h-3.5 fill-zinc-950" />
-                <span>Finish Session ({elapsedSeconds}s) & See Score</span>
+                <span>Finish Session ({elapsedSeconds}s) & Calculate Score</span>
               </button>
             </div>
           )}
 
-          {/* Bottom Action Controls: Disappears while typing to eliminate distraction; reappears on reset or hover */}
-          <div
-            className={`mt-8 flex flex-wrap items-center justify-center gap-4 transition-all duration-300 ${
-              isStarted && !isFinished
-                ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
-                : 'opacity-100'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={resetTest}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Restart test</span>
-            </button>
+          {/* Bottom Action Controls: COMPLETELY DISAPPEAR when typing starts as requested! */}
+          {!isStarted && (
+            <div className="mt-8 flex flex-col items-center gap-5 transition-all duration-200">
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={resetTest}
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Restart test</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setCompetitive(!competitive)}
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all active:scale-95 ${
-                competitive
-                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 shadow-sm'
-                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border-zinc-700/60 shadow-md'
-              }`}
-            >
-              <ShieldAlert className={`w-3.5 h-3.5 ${competitive ? 'text-amber-400' : 'text-zinc-400'}`} />
-              <span>Competitive: {competitive ? 'On' : 'Off'}</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setCompetitive(!competitive)}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all active:scale-95 ${
+                    competitive
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 shadow-sm'
+                      : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border-zinc-700/60 shadow-md'
+                  }`}
+                >
+                  <ShieldAlert className={`w-3.5 h-3.5 ${competitive ? 'text-amber-400' : 'text-zinc-400'}`} />
+                  <span>Competitive: {competitive ? 'On' : 'Off'}</span>
+                </button>
 
-            <a
-              href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 text-xs font-bold tracking-wide border border-amber-500/40 shadow-md shadow-amber-500/10 transition-all hover:scale-105 active:scale-95"
-              title="Open pure full-screen textbox only in a new tab"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
-              <span>Open Focus Mode (New Tab) ↗</span>
-            </a>
-          </div>
+                <a
+                  href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 text-xs font-bold tracking-wide border border-amber-500/40 shadow-md shadow-amber-500/10 transition-all hover:scale-105 active:scale-95"
+                  title="Open pure full-screen textbox only in a new tab (Shortcut: Alt + F)"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Open Focus Mode (New Tab) ↗</span>
+                </a>
+              </div>
 
-          {/* Tab + Enter keyboard shortcut indicator: Disappears while typing */}
-          <div
-            className={`mt-6 flex items-center justify-center gap-2 text-xs font-mono text-zinc-400 select-none transition-opacity duration-300 ${
-              isStarted && !isFinished ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'
-            }`}
-          >
-            <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Tab</kbd>
-            <span>+</span>
-            <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Enter</kbd>
-            <span className="text-zinc-400">— Restart test</span>
-          </div>
+              {/* Tab + Enter keyboard shortcut indicator */}
+              <div className="flex items-center justify-center gap-2 text-xs font-mono text-zinc-400 select-none">
+                <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Tab</kbd>
+                <span>+</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Enter</kbd>
+                <span className="text-zinc-400">— Restart test</span>
+                <span className="text-zinc-600 px-1">•</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Alt + F</kbd>
+                <span className="text-zinc-400">— Zen Mode</span>
+              </div>
+            </div>
+          )}
 
         </div>
       ) : (
-        /* Comprehensive Results Scorecard View */
-        <div className="w-full rounded-3xl bg-zinc-900/70 border border-zinc-800 p-6 sm:p-10 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+        /* =========================================================================
+         * REDESIGNED PREMIUM PERFORMANCE SCORECARD
+         * Clean, bespoke audio-engineering layout with interactive area chart
+         * ========================================================================= */
+        <div className="w-full rounded-3xl bg-zinc-900/80 border border-zinc-800/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
           
-          <div className="flex items-center justify-between pb-6 border-b border-zinc-800">
+          {/* Scorecard Header & Switch Attribution */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
             <div>
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400">
-                Test Completed
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-zinc-100 tracking-tight mt-0.5">
-                Performance Scorecard
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
+                  Performance Diagnostics Verified
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight mt-1">
+                Typing Benchmark Report
               </h2>
             </div>
             
-            <div className="flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: currentProfile?.color }}
-              />
-              <span className="text-xs font-mono text-zinc-300 font-medium">
-                {currentProfile?.name} ({currentProfile?.category})
-              </span>
+            {/* Active Switch Personality Card */}
+            <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-zinc-950/80 border border-zinc-800">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
+                style={{ backgroundColor: `${currentProfile?.color}20`, border: `1px solid ${currentProfile?.color}40` }}
+              >
+                <SwitchIcon
+                  id={results?.soundPack || activePack}
+                  className="w-5 h-5"
+                  style={{ color: currentProfile?.color }}
+                />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                  <span>{currentProfile?.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${currentProfile?.badgeBg}`}>
+                    {currentProfile?.category}
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono text-zinc-400">
+                  {currentProfile?.pitch} Pitch • {currentProfile?.loudness}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Primary Big Numbers */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 py-8 border-b border-zinc-800 text-center">
+          {/* Primary Speed Metric Hero */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 py-8 border-b border-zinc-800/80">
             
-            <div>
-              <div className="text-xs font-mono uppercase text-zinc-400 mb-1">Net WPM</div>
-              <div className="text-4xl sm:text-5xl font-mono font-extrabold text-amber-400">
+            {/* Net WPM */}
+            <div className="flex flex-col justify-center">
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span>Net WPM</span>
+              </span>
+              <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-amber-400">
                 {results?.wpm}
               </div>
+              <span className="text-[11px] font-mono text-zinc-400 mt-1">
+                Words Per Minute
+              </span>
             </div>
 
-            <div>
-              <div className="text-xs font-mono uppercase text-zinc-400 mb-1">Accuracy</div>
-              <div className="text-4xl sm:text-5xl font-mono font-extrabold text-emerald-400">
+            {/* Accuracy */}
+            <div className="flex flex-col justify-center">
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Accuracy</span>
+              </span>
+              <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-emerald-400">
                 {results?.accuracy}%
               </div>
+              <span className="text-[11px] font-mono text-zinc-400 mt-1">
+                Precision Rate
+              </span>
             </div>
 
-            <div>
-              <div className="text-xs font-mono uppercase text-zinc-400 mb-1">Raw WPM</div>
-              <div className="text-4xl sm:text-5xl font-mono font-extrabold text-zinc-200">
+            {/* Raw WPM */}
+            <div className="flex flex-col justify-center">
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Raw WPM</span>
+              </span>
+              <div className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-zinc-300">
                 {results?.rawWpm}
               </div>
+              <span className="text-[11px] font-mono text-zinc-400 mt-1">
+                Gross Speed
+              </span>
             </div>
 
-            <div>
-              <div className="text-xs font-mono uppercase text-zinc-400 mb-1">Consistency</div>
-              <div className="text-4xl sm:text-5xl font-mono font-extrabold text-sky-400">
+            {/* Consistency */}
+            <div className="flex flex-col justify-center">
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-sky-400" />
+                <span>Consistency</span>
+              </span>
+              <div className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-sky-400">
                 {results?.consistency}%
               </div>
+              <span className="text-[11px] font-mono text-zinc-400 mt-1">
+                Pacing Variance
+              </span>
             </div>
 
           </div>
 
-          {/* Secondary Stats Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-b border-zinc-800 text-xs font-mono text-zinc-300">
-            <div className="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
-              <span className="text-zinc-500 block mb-1">Keystrokes</span>
-              <span className="text-emerald-400 font-bold">{results?.correctChars}</span> correct /{' '}
-              <span className="text-rose-400 font-bold">{results?.incorrectChars}</span> incorrect
+          {/* Secondary Stats Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-6 border-b border-zinc-800/80 text-xs font-mono">
+            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
+              <span className="text-zinc-400 block text-[11px] mb-1">Keystrokes</span>
+              <span className="text-emerald-400 font-bold">{results?.correctChars}</span> correct
+              <span className="text-zinc-600 mx-1.5">/</span>
+              <span className="text-rose-400 font-bold">{results?.incorrectChars}</span> error
             </div>
-            <div className="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
-              <span className="text-zinc-500 block mb-1">Test Duration</span>
-              <span className="text-zinc-200 font-bold">{results?.timeSpent} seconds</span>
+
+            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
+              <span className="text-zinc-400 block text-[11px] mb-1">Session Duration</span>
+              <span className="text-zinc-200 font-bold">{results?.timeSpent}s</span> total time
             </div>
-            <div className="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
-              <span className="text-zinc-500 block mb-1">Mode</span>
-              <span className="text-zinc-200 font-bold capitalize">{mode} ({mode === 'time' ? `${duration}s` : `${wordTarget}w`})</span>
+
+            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
+              <span className="text-zinc-400 block text-[11px] mb-1">Test Configuration</span>
+              <span className="text-zinc-200 font-bold capitalize">
+                {mode} ({mode === 'time' ? `${duration}s` : mode === 'words' ? `${wordTarget}w` : 'unlimited'})
+              </span>
             </div>
-            <div className="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
-              <span className="text-zinc-500 block mb-1">Sound Atmosphere</span>
-              <span className="text-amber-400 font-bold">{currentProfile?.name}</span>
+
+            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
+              <span className="text-zinc-400 block text-[11px] mb-1">Total Keystrokes</span>
+              <span className="text-amber-400 font-bold">{results?.totalKeystrokes}</span> pressed
             </div>
           </div>
 
-          {/* WPM Progression Graph (SVG chart) */}
+          {/* High-Definition Progression Chart */}
           {results?.history && results.history.length > 1 && (
-            <div className="py-6 border-b border-zinc-800">
-              <div className="text-xs font-mono text-zinc-400 mb-3 flex items-center justify-between">
-                <span>WPM Progression Over Time</span>
-                <span className="text-zinc-500">Live speed graph</span>
+            <div className="py-6 border-b border-zinc-800/80">
+              <div className="flex items-center justify-between mb-3 text-xs font-mono">
+                <span className="font-semibold text-zinc-300">WPM Velocity & Errors Over Time</span>
+                <div className="flex items-center gap-4 text-[11px]">
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <span className="w-3 h-0.5 bg-amber-400 inline-block rounded-full" /> Net WPM
+                  </span>
+                  <span className="flex items-center gap-1.5 text-zinc-400">
+                    <span className="w-3 h-0.5 border-b border-dashed border-zinc-400 inline-block" /> Raw WPM
+                  </span>
+                </div>
               </div>
-              <div className="w-full h-32 bg-zinc-950/60 rounded-2xl border border-zinc-800/60 p-2 flex items-end">
-                <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${Math.max(10, results.history.length - 1)} 100`} preserveAspectRatio="none">
-                  {/* Grid Lines */}
-                  <line x1="0" y1="25" x2={results.history.length} y2="25" stroke="#27272a" strokeDasharray="2" />
-                  <line x1="0" y1="50" x2={results.history.length} y2="50" stroke="#27272a" strokeDasharray="2" />
-                  <line x1="0" y1="75" x2={results.history.length} y2="75" stroke="#27272a" strokeDasharray="2" />
-                  
-                  {/* WPM Polyline */}
-                  <polyline
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="2.5"
-                    points={results.history.map((h, i) => `${i},${100 - Math.min(100, (h.wpm / 140) * 100)}`).join(' ')}
+
+              {/* Chart SVG with smooth area gradient fill */}
+              <div className="w-full h-36 bg-zinc-950/80 rounded-2xl border border-zinc-800/80 p-3 flex items-end relative overflow-hidden">
+                <svg
+                  className="w-full h-full overflow-visible"
+                  viewBox={`0 0 ${Math.max(10, results.history.length - 1)} 100`}
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id="wpmGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal Guideline Grids */}
+                  <line x1="0" y1="25" x2={results.history.length} y2="25" stroke="#27272a" strokeDasharray="3" />
+                  <line x1="0" y1="50" x2={results.history.length} y2="50" stroke="#27272a" strokeDasharray="3" />
+                  <line x1="0" y1="75" x2={results.history.length} y2="75" stroke="#27272a" strokeDasharray="3" />
+
+                  {/* Gradient Area Fill under Net WPM */}
+                  <polygon
+                    fill="url(#wpmGradient)"
+                    points={`0,100 ${results.history.map((h, i) => `${i},${100 - Math.min(100, (h.wpm / 140) * 100)}`).join(' ')} ${results.history.length - 1},100`}
                   />
 
-                  {/* Raw WPM Polyline */}
+                  {/* Raw WPM Dashed Polyline */}
                   <polyline
                     fill="none"
                     stroke="#71717a"
@@ -717,39 +821,59 @@ Try it: ${window.location.origin}`;
                     strokeDasharray="3"
                     points={results.history.map((h, i) => `${i},${100 - Math.min(100, (h.rawWpm / 140) * 100)}`).join(' ')}
                   />
+
+                  {/* Net WPM Solid Line */}
+                  <polyline
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={results.history.map((h, i) => `${i},${100 - Math.min(100, (h.wpm / 140) * 100)}`).join(' ')}
+                  />
                 </svg>
               </div>
             </div>
           )}
 
-          {/* Result Action Buttons */}
+          {/* Scorecard Action Buttons */}
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             
             <button
               type="button"
               onClick={resetTest}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold tracking-wide shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+              className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold tracking-wide shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Try Again (Tab + Enter)</span>
+              <span>Next Test (Tab + Enter)</span>
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={copyScore}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
-                <span>{copied ? 'Score Copied!' : 'Copy Score'}</span>
+                <span>{copied ? 'Scorecard Copied!' : 'Copy Score'}</span>
               </button>
+
+              <a
+                href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
+              >
+                <Maximize2 className="w-4 h-4 text-amber-400" />
+                <span>Open in Focus Mode</span>
+              </a>
 
               <Link
                 href="/sounds"
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all"
               >
-                <span>Explore Switch Sounds</span>
-                <ArrowRight className="w-4 h-4 text-amber-400" />
+                <Layers className="w-4 h-4 text-sky-400" />
+                <span>Switch Studio</span>
               </Link>
             </div>
 
