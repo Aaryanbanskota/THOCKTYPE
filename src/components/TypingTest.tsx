@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
 import { generateRandomWords, generateTextByDifficulty } from '@/lib/word-banks';
+import { analyzeBenchmark } from '@/lib/benchmark-analyzer';
 import { SoundPackId, TestResults, WpmDataPoint, DifficultyMode } from '@/types/sound';
 import {
   RotateCcw,
@@ -70,6 +71,16 @@ export function TypingTest() {
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
 
+  // High-Precision Benchmark & Hardware Physics References (performance.now())
+  const startTimeRef = useRef<number | null>(null);
+  const lastKeystrokeTimeRef = useRef<number | null>(null);
+  const keystrokeIntervalsRef = useRef<number[]>([]);
+  const totalKeypressesRef = useRef<number>(0);
+  const backspaceCountRef = useRef<number>(0);
+  const correctedErrorsRef = useRef<number>(0);
+  const totalErrorsCommittedRef = useRef<number>(0);
+  const missedKeysRef = useRef<Record<string, number>>({});
+
   // Initialize word list
   const initWords = useCallback(() => {
     let wordCount = 70;
@@ -88,6 +99,15 @@ export function TypingTest() {
   const resetTest = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
+
+    startTimeRef.current = null;
+    lastKeystrokeTimeRef.current = null;
+    keystrokeIntervalsRef.current = [];
+    totalKeypressesRef.current = 0;
+    backspaceCountRef.current = 0;
+    correctedErrorsRef.current = 0;
+    totalErrorsCommittedRef.current = 0;
+    missedKeysRef.current = {};
 
     setInput('');
     setIsStarted(false);
@@ -112,7 +132,7 @@ export function TypingTest() {
     resetTest();
   }, [resetTest]);
 
-  // Calculate live stats
+  // Calculate live stats with high precision
   const calculateLiveStats = useCallback((currInput: string, seconds: number) => {
     if (seconds <= 0) return;
 
@@ -127,27 +147,36 @@ export function TypingTest() {
       }
     }
 
-    const minutes = seconds / 60;
-    const grossWpm = Math.round((currInput.length / 5) / minutes) || 0;
-    const netWpm = Math.max(0, Math.round((correctChars / 5) / minutes)) || 0;
-    const acc = currInput.length > 0 ? Math.round((correctChars / currInput.length) * 100) : 100;
+    const minutes = Math.max(0.016, seconds / 60);
+    const totalKeys = Math.max(currInput.length, totalKeypressesRef.current);
+    const grossWpm = Math.round((totalKeys / 5) / minutes) || 0;
+    // Standard Net WPM with uncorrected error deduction
+    const netWpm = Math.max(0, Math.round(((correctChars / 5) - incorrectChars) / minutes)) || 0;
+    // Real strict accuracy factoring total keystrokes pressed
+    const acc = totalKeys > 0
+      ? Math.max(0, Math.min(100, Math.round((correctChars / totalKeys) * 1000) / 10))
+      : 100;
 
     setRawWpm(grossWpm);
     setWpm(netWpm);
-    setAccuracy(acc);
+    setAccuracy(Math.round(acc));
 
     return { grossWpm, netWpm, acc, correctChars, incorrectChars };
   }, [fullText]);
 
   // Finish the test and compute complete score
-  const finishTest = useCallback((finalInput: string, totalSeconds: number) => {
+  const finishTest = useCallback((finalInput: string, fallbackSeconds: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
 
     setIsFinished(true);
 
-    const seconds = Math.max(1, totalSeconds);
-    const minutes = seconds / 60;
+    // Exact high-precision duration using performance.now()
+    const now = performance.now();
+    const exactSeconds = startTimeRef.current
+      ? Math.max(0.5, (now - startTimeRef.current) / 1000)
+      : Math.max(1, fallbackSeconds);
+    const minutes = exactSeconds / 60;
 
     let correctChars = 0;
     let incorrectChars = 0;
@@ -162,15 +191,30 @@ export function TypingTest() {
 
     const extraChars = Math.max(0, finalInput.length - fullText.length);
     const missedChars = Math.max(0, fullText.length - finalInput.length);
-    const totalKeystrokes = finalInput.length;
+    const totalKeystrokes = Math.max(finalInput.length, totalKeypressesRef.current);
+    const backspaceCount = backspaceCountRef.current;
+    const correctedErrors = correctedErrorsRef.current;
+    const totalErrorsCommitted = totalErrorsCommittedRef.current;
 
-    const finalRawWpm = Math.round((finalInput.length / 5) / minutes) || 0;
-    const finalNetWpm = Math.max(0, Math.round((correctChars / 5) / minutes)) || 0;
-    const finalAcc = totalKeystrokes > 0 ? Math.round((correctChars / totalKeystrokes) * 100) : 100;
+    // Net WPM (Monkeytype / TypeRacer standard with error penalty)
+    const finalNetWpm = Math.max(0, Math.round(((correctChars / 5) - incorrectChars) / minutes)) || 0;
+    // Raw WPM (Gross hand velocity)
+    const finalRawWpm = Math.round((totalKeystrokes / 5) / minutes) || 0;
+    // Strict Real Accuracy (to 1 decimal place)
+    const finalAcc = totalKeystrokes > 0
+      ? Math.max(0, Math.min(100, Math.round((correctChars / totalKeystrokes) * 1000) / 10))
+      : 100;
 
-    // Consistency calculation based on history variance
-    let consistency = 95;
-    if (history.length > 2) {
+    // Consistency calculation based on sub-millisecond keystroke intervals variance
+    let consistency = 88;
+    const intervals = keystrokeIntervalsRef.current;
+    if (intervals.length > 5) {
+      const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const variance = intervals.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / intervals.length;
+      const stdDev = Math.sqrt(variance);
+      const cv = stdDev / (mean || 1);
+      consistency = Math.max(35, Math.min(99, Math.round((1 - Math.min(0.85, cv / 1.5)) * 100)));
+    } else if (history.length > 2) {
       const wpms = history.map(h => h.wpm);
       const mean = wpms.reduce((a, b) => a + b, 0) / wpms.length;
       const variance = wpms.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / wpms.length;
@@ -178,20 +222,52 @@ export function TypingTest() {
       consistency = Math.max(50, Math.min(100, Math.round(100 - (stdDev / (mean || 1)) * 100)));
     }
 
+    // Top Trouble Keys (most frequently missed)
+    const troubleKeys = Object.entries(missedKeysRef.current)
+      .map(([char, count]) => ({ char, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Run Pure Mathematical Benchmark Analyzer (0% AI, 0% API)
+    const report = analyzeBenchmark({
+      netWpm: finalNetWpm,
+      rawWpm: finalRawWpm,
+      accuracy: finalAcc,
+      exactSeconds,
+      correctChars,
+      incorrectChars,
+      correctedErrors,
+      totalErrorsCommitted,
+      backspaceCount,
+      totalKeystrokes,
+      consistency,
+      difficulty,
+      troubleKeys
+    });
+
     const testResults: TestResults = {
       wpm: finalNetWpm,
       rawWpm: finalRawWpm,
       accuracy: finalAcc,
-      timeSpent: seconds,
+      timeSpent: Math.round(exactSeconds),
+      exactSeconds: Math.round(exactSeconds * 100) / 100,
       difficulty,
       correctChars,
       incorrectChars,
       extraChars,
       missedChars,
       totalKeystrokes,
+      backspaceCount,
+      correctedErrors,
+      totalErrorsCommitted,
       consistency,
+      efficiency: report.efficiency,
+      kps: report.kps,
+      msPerKey: report.msPerKey,
+      troubleKeys,
       soundPack: activePack,
-      history: [...history, { second: seconds, wpm: finalNetWpm, rawWpm: finalRawWpm, errors: incorrectChars }]
+      history: [...history, { second: Math.round(exactSeconds), wpm: finalNetWpm, rawWpm: finalRawWpm, errors: incorrectChars }],
+      report
     };
 
     setResults(testResults);
@@ -204,9 +280,9 @@ export function TypingTest() {
         origin: { y: 0.6 }
       });
     }
-  }, [fullText, activePack, history]);
+  }, [fullText, activePack, history, difficulty]);
 
-  // Main input handler
+  // Main input handler with sub-millisecond precision
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isFinished) return;
 
@@ -215,33 +291,53 @@ export function TypingTest() {
     // Start timer on first keystroke
     if (!isStarted && val.length > 0) {
       setIsStarted(true);
+      const start = performance.now();
+      startTimeRef.current = start;
+      lastKeystrokeTimeRef.current = start;
 
+      // 100ms high-frequency timer ticker for zero drift
       timerRef.current = setInterval(() => {
-        setElapsedSeconds((prev) => {
-          const nextSec = prev + 1;
+        if (!startTimeRef.current) return;
+        const exactElapsed = (performance.now() - startTimeRef.current) / 1000;
+        const roundedSec = Math.floor(exactElapsed);
+        setElapsedSeconds(roundedSec);
 
-          if (mode === 'time') {
-            const remaining = duration - nextSec;
-            setTimeLeft(remaining);
+        if (mode === 'time') {
+          const remaining = Math.max(0, duration - roundedSec);
+          setTimeLeft(remaining);
 
-            if (remaining <= 0) {
-              finishTest(inputRef.current?.value || '', duration);
-              return duration;
-            }
+          if (exactElapsed >= duration) {
+            finishTest(inputRef.current?.value || '', duration);
+            return;
           }
+        }
 
-          // Record history point
-          const live = calculateLiveStats(inputRef.current?.value || '', nextSec);
+        // Record history snapshot every second
+        const currentSec = Math.floor(exactElapsed);
+        if (currentSec > 0 && currentSec !== elapsedSeconds) {
+          const live = calculateLiveStats(inputRef.current?.value || '', exactElapsed);
           if (live) {
             setHistory(h => [
               ...h,
-              { second: nextSec, wpm: live.netWpm, rawWpm: live.grossWpm, errors: live.incorrectChars }
+              { second: currentSec, wpm: live.netWpm, rawWpm: live.grossWpm, errors: live.incorrectChars }
             ]);
           }
+        }
+      }, 100);
+    }
 
-          return nextSec;
-        });
-      }, 1000);
+    // Keystroke analysis on character addition
+    if (val.length > input.length) {
+      const addedCount = val.length - input.length;
+      totalKeypressesRef.current += addedCount;
+
+      for (let i = input.length; i < val.length; i++) {
+        if (val[i] !== fullText[i]) {
+          totalErrorsCommittedRef.current++;
+          const targetChar = fullText[i] || ' ';
+          missedKeysRef.current[targetChar] = (missedKeysRef.current[targetChar] || 0) + 1;
+        }
+      }
     }
 
     // Competitive mode check: reject errors if strict
@@ -253,7 +349,8 @@ export function TypingTest() {
     }
 
     setInput(val);
-    calculateLiveStats(val, elapsedSeconds || 1);
+    const currentExactElapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
+    calculateLiveStats(val, currentExactElapsed);
 
     // Infinite word stream in unlimited mode
     if (mode === 'unlimited' && val.length > fullText.length - 80) {
@@ -262,7 +359,7 @@ export function TypingTest() {
 
     // In words mode: finish when target reached
     if (mode === 'words' && val.length >= fullText.length) {
-      finishTest(val, elapsedSeconds || 1);
+      finishTest(val, currentExactElapsed);
     }
   };
 
@@ -273,6 +370,27 @@ export function TypingTest() {
       e.preventDefault();
       resetTest();
       return;
+    }
+
+    // Keystroke Interval Physics Tracking
+    const now = performance.now();
+    if (lastKeystrokeTimeRef.current && isStarted) {
+      const delta = now - lastKeystrokeTimeRef.current;
+      if (delta > 20 && delta < 4000) {
+        keystrokeIntervalsRef.current.push(delta);
+      }
+    }
+    lastKeystrokeTimeRef.current = now;
+
+    // Track Backspaces & Error Corrections
+    if (e.key === 'Backspace') {
+      backspaceCountRef.current++;
+      if (input.length > 0) {
+        const lastCharIndex = input.length - 1;
+        if (input[lastCharIndex] !== fullText[lastCharIndex]) {
+          correctedErrorsRef.current++;
+        }
+      }
     }
 
     // Play switch bottom-out sound on keydown
@@ -357,17 +475,19 @@ export function TypingTest() {
     }
   }, [input]);
 
-  // Copy results summary
+  // Copy results summary with strict benchmark diagnostics
   const copyScore = () => {
     if (!results) return;
     const profile = SWITCH_PROFILES[results.soundPack];
-    const text = `⌨️ THOCKTYPE SPEED TEST RESULT
+    const text = `⌨️ THOCKTYPE SPEED BENCHMARK REPORT
 WPM: ${results.wpm} (Raw: ${results.rawWpm})
-Accuracy: ${results.accuracy}%
-Difficulty: ${results.difficulty.toUpperCase()}
-Time: ${results.timeSpent}s | Consistency: ${results.consistency}%
+Accuracy: ${results.accuracy}% (Strict Keystroke Audit)
+Consistency: ${results.consistency}% | Time: ${results.exactSeconds.toFixed(2)}s
+Difficulty: ${results.difficulty.toUpperCase()} | Tier: ${results.report?.tier || 'Verified'}
+Actuation: ${results.kps} KPS (${results.msPerKey}ms/key)
 Switch: ${profile?.name} (${profile?.category})
-Try it: ${window.location.origin}`;
+Capacity: ${results.report?.potentialHeadline || 'Practice & grow'}
+Benchmark verified: ${window.location.origin}`;
     
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -697,11 +817,16 @@ Try it: ${window.location.origin}`;
           {/* Scorecard Header & Switch Attribution */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
                   Performance Diagnostics Verified
                 </span>
+                {results?.report?.tier && (
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold uppercase tracking-wider border ${results.report.tierBadgeColor}`}>
+                    {results.report.tier}
+                  </span>
+                )}
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight mt-1">
                 Typing Benchmark Report
@@ -734,6 +859,29 @@ Try it: ${window.location.origin}`;
             </div>
           </div>
 
+          {/* Target Capacity & Motivational Growth Engine */}
+          {results?.report && (
+            <div className="my-6 p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 via-zinc-950/60 to-zinc-900 border border-amber-500/30 shadow-lg">
+              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
+                    Target Capacity & Motivational Growth Projection
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                  Target: {results.report.projectedWpmMin} – {results.report.projectedWpmMax} WPM
+                </div>
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-zinc-100 tracking-tight">
+                {results.report.potentialHeadline}
+              </h3>
+              <p className="mt-2 text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">
+                {results.report.motivationMessage}
+              </p>
+            </div>
+          )}
+
           {/* Primary Speed Metric Hero */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 py-8 border-b border-zinc-800/80">
             
@@ -747,7 +895,7 @@ Try it: ${window.location.origin}`;
                 {results?.wpm}
               </div>
               <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Words Per Minute
+                Words Per Minute (Error Penalized)
               </span>
             </div>
 
@@ -761,7 +909,7 @@ Try it: ${window.location.origin}`;
                 {results?.accuracy}%
               </div>
               <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Precision Rate
+                Strict Keystroke Audit
               </span>
             </div>
 
@@ -775,7 +923,7 @@ Try it: ${window.location.origin}`;
                 {results?.rawWpm}
               </div>
               <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Gross Speed
+                Gross Hand Velocity
               </span>
             </div>
 
@@ -789,47 +937,109 @@ Try it: ${window.location.origin}`;
                 {results?.consistency}%
               </div>
               <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Pacing Variance
+                Interval Variance Cadence
               </span>
             </div>
 
           </div>
 
-          {/* Secondary Stats Strip */}
+          {/* High-Friction Target Problem Keys */}
+          {results?.troubleKeys && results.troubleKeys.length > 0 && (
+            <div className="py-4 border-b border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-rose-400" />
+                <span className="font-semibold text-zinc-300">High-Friction Problem Keys:</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {results.troubleKeys.map((item, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-rose-500/40 text-zinc-100">
+                      {item.char === ' ' ? '␣ Space' : item.char}
+                    </kbd>
+                    <span className="text-[10px] text-rose-400 font-normal">({item.count}× miss)</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Harsh Technical Diagnostics Audits (Zero-Tolerance Keystroke Precision) */}
+          {results?.report?.harshDiagnostics && (
+            <div className="py-6 border-b border-zinc-800/80">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldAlert className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
+                  Harsh Diagnostic Audits (Zero-Tolerance Typing Benchmark)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {results.report.harshDiagnostics.map((diag, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3.5 rounded-2xl border text-xs ${
+                      diag.severity === 'critical'
+                        ? 'bg-rose-950/20 border-rose-500/40 text-rose-200'
+                        : diag.severity === 'warning'
+                        ? 'bg-amber-950/20 border-amber-500/40 text-amber-200'
+                        : 'bg-emerald-950/20 border-emerald-500/40 text-emerald-200'
+                    }`}
+                  >
+                    <div className="font-bold font-mono mb-1.5 flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${
+                        diag.severity === 'critical' ? 'bg-rose-400' : diag.severity === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
+                      }`} />
+                      <span>{diag.title}</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-zinc-300 font-sans">
+                      {diag.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Secondary Stats Strip: High-Precision Physics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-6 border-b border-zinc-800/80 text-xs font-mono">
             <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Keystrokes</span>
+              <span className="text-zinc-400 block text-[11px] mb-1">Keystroke Accounting</span>
               <span className="text-emerald-400 font-bold">{results?.correctChars}</span> correct
               <span className="text-zinc-600 mx-1.5">/</span>
-              <span className="text-rose-400 font-bold">{results?.incorrectChars}</span> error
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Session Duration</span>
-              <span className="text-zinc-200 font-bold">{results?.timeSpent}s</span> total time
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Configuration & Difficulty</span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-zinc-200 font-bold capitalize">
-                  {mode} ({mode === 'time' ? `${duration}s` : mode === 'words' ? `${wordTarget}w` : 'unlimited'})
-                </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold uppercase tracking-wider ${
-                  (results?.difficulty || difficulty) === 'easy'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : (results?.difficulty || difficulty) === 'medium'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                }`}>
-                  {results?.difficulty || difficulty}
-                </span>
+              <span className="text-rose-400 font-bold">{results?.incorrectChars}</span> uncorrected
+              <div className="text-[10px] text-zinc-500 mt-1">
+                +{results?.correctedErrors || 0} corrected via Backspace
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Total Keystrokes</span>
-              <span className="text-amber-400 font-bold">{results?.totalKeystrokes}</span> pressed
+              <span className="text-zinc-400 block text-[11px] mb-1">High-Precision Time</span>
+              <span className="text-zinc-200 font-bold text-sm">
+                {results?.exactSeconds ? results.exactSeconds.toFixed(2) : results?.timeSpent}s
+              </span>
+              <div className="text-[10px] text-zinc-500 mt-1">
+                sub-millisecond performance.now()
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
+              <span className="text-zinc-400 block text-[11px] mb-1">Actuation Dynamics</span>
+              <span className="text-amber-400 font-bold">{results?.kps || 0} KPS</span>
+              <span className="text-zinc-600 mx-1">•</span>
+              <span className="text-zinc-300 font-bold">{results?.msPerKey || 0}ms</span>
+              <div className="text-[10px] text-zinc-500 mt-1">
+                Efficiency: {results?.efficiency || 100}%
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
+              <span className="text-zinc-400 block text-[11px] mb-1">Correction Friction</span>
+              <span className="text-zinc-200 font-bold">{results?.backspaceCount || 0}</span> backspaces
+              <div className="text-[10px] text-zinc-500 mt-1">
+                {results?.totalErrorsCommitted || 0} total misstrikes committed
+              </div>
             </div>
           </div>
 

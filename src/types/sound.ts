@@ -43,18 +43,50 @@ export interface WpmDataPoint {
   errors: number;
 }
 
+export interface TroubleKey {
+  char: string;
+  count: number;
+}
+
+export interface BenchmarkReport {
+  tier: string;
+  tierBadgeColor: string;
+  projectedWpmMin: number;
+  projectedWpmMax: number;
+  potentialHeadline: string;
+  motivationMessage: string;
+  harshDiagnostics: {
+    title: string;
+    description: string;
+    severity: 'good' | 'warning' | 'critical';
+  }[];
+  keyTrainingRecommendation: string;
+  kps: number;
+  msPerKey: number;
+  efficiency: number;
+}
+
 export interface TestResults {
   wpm: number;
   rawWpm: number;
   accuracy: number;
   timeSpent: number;
+  exactSeconds: number;
   difficulty: DifficultyMode;
   correctChars: number;
   incorrectChars: number;
   extraChars: number;
   missedChars: number;
   totalKeystrokes: number;
+  backspaceCount: number;
+  correctedErrors: number;
+  totalErrorsCommitted: number;
   consistency: number;
+  efficiency: number;
+  kps: number;
+  msPerKey: number;
+  troubleKeys: TroubleKey[];
   soundPack: SoundPackId;
   history: WpmDataPoint[];
+  report: BenchmarkReport;
 }

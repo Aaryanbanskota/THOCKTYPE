@@ -69,6 +69,7 @@ function FocusModeContent() {
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
@@ -97,6 +98,7 @@ function FocusModeContent() {
   const resetTest = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
+    startTimeRef.current = null;
 
     setInput('');
     setIsStarted(false);
@@ -117,21 +119,25 @@ function FocusModeContent() {
     }
   }, [isConfigured, resetTest]);
 
-  // Finish test
+  // Finish test with exact timing and error penalty
   const finishTest = useCallback((finalInput: string, seconds: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
     setIsFinished(true);
 
-    const safeSecs = Math.max(1, seconds);
-    const minutes = safeSecs / 60;
+    const exactSeconds = startTimeRef.current
+      ? Math.max(0.5, (performance.now() - startTimeRef.current) / 1000)
+      : Math.max(1, seconds);
+    const minutes = exactSeconds / 60;
     let correctChars = 0;
+    let incorrectChars = 0;
     for (let i = 0; i < finalInput.length; i++) {
       if (finalInput[i] === fullText[i]) correctChars++;
+      else incorrectChars++;
     }
 
-    const netWpm = Math.max(0, Math.round((correctChars / 5) / minutes)) || 0;
-    const acc = finalInput.length > 0 ? Math.round((correctChars / finalInput.length) * 100) : 100;
+    const netWpm = Math.max(0, Math.round(((correctChars / 5) - incorrectChars) / minutes)) || 0;
+    const acc = finalInput.length > 0 ? Math.round((correctChars / finalInput.length) * 1000) / 10 : 100;
 
     setFinalWpm(netWpm);
     setFinalAccuracy(acc);
@@ -144,21 +150,23 @@ function FocusModeContent() {
 
     if (!isStarted && val.length > 0) {
       setIsStarted(true);
+      startTimeRef.current = performance.now();
 
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (isUnlimited) {
-            return prev + 1;
-          } else {
-            const next = prev - 1;
-            if (next <= 0) {
-              finishTest(inputRef.current?.value || '', selectedDuration);
-              return 0;
-            }
-            return next;
+        if (!startTimeRef.current) return;
+        const exactElapsed = (performance.now() - startTimeRef.current) / 1000;
+        const roundedSec = Math.floor(exactElapsed);
+
+        if (isUnlimited) {
+          setTimeLeft(roundedSec);
+        } else {
+          const remaining = Math.max(0, selectedDuration - roundedSec);
+          setTimeLeft(remaining);
+          if (exactElapsed >= selectedDuration) {
+            finishTest(inputRef.current?.value || '', selectedDuration);
           }
-        });
-      }, 1000);
+        }
+      }, 100);
     }
 
     setInput(val);
@@ -170,10 +178,11 @@ function FocusModeContent() {
 
     // Words mode completion
     if (selectedMode === 'words' && val.length >= fullText.length) {
-      finishTest(val, timeLeft);
+      const currentExactElapsed = startTimeRef.current
+        ? (performance.now() - startTimeRef.current) / 1000
+        : timeLeft;
+      finishTest(val, currentExactElapsed);
     }
-
-    // Time mode completion handled by timer
   };
 
   // Keyboard sounds
