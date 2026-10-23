@@ -6,7 +6,8 @@ import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
 import { generateRandomWords, KEYBOARD_QUOTES } from '@/lib/word-banks';
 import { SoundPackId, TestResults, WpmDataPoint } from '@/types/sound';
-import { RotateCcw, ShieldAlert, Award, Copy, Check, Sparkles, Volume2, ArrowRight, Maximize2, ExternalLink } from 'lucide-react';
+import { RotateCcw, ShieldAlert, Award, Copy, Check, Sparkles, Volume2, ArrowRight, Maximize2, ExternalLink, Square, Pause } from 'lucide-react';
+import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
 
 type TestMode = 'time' | 'words' | 'unlimited';
@@ -233,8 +234,13 @@ export function TypingTest() {
     setInput(val);
     calculateLiveStats(val, elapsedSeconds || 1);
 
-    // If typed entire text in words or unlimited mode
-    if (val.length >= fullText.length) {
+    // In unlimited mode: automatically stream more words as user types
+    if (mode === 'unlimited' && val.length > fullText.length - 80) {
+      setWords((prev) => [...prev, ...generateRandomWords(50)]);
+    }
+
+    // In words mode: finish when target reached
+    if (mode === 'words' && val.length >= fullText.length) {
       finishTest(val, elapsedSeconds || 1);
     }
   };
@@ -272,7 +278,11 @@ export function TypingTest() {
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        resetTest();
+        if (mode === 'unlimited' && isStarted && !isFinished && input.length > 0) {
+          finishTest(inputRef.current?.value || input, elapsedSeconds || 1);
+        } else {
+          resetTest();
+        }
       }
     };
 
@@ -412,9 +422,10 @@ Try it: ${window.location.origin}`;
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950/60 border border-zinc-800/60 text-xs">
             <Volume2 className="w-3.5 h-3.5 text-zinc-400" />
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: currentProfile?.color }}
+            <SwitchIcon
+              id={activePack}
+              className="w-3.5 h-3.5 shrink-0"
+              style={{ color: currentProfile?.color }}
             />
             <span className="font-medium text-zinc-200">{currentProfile?.name}</span>
           </div>
@@ -472,7 +483,7 @@ Try it: ${window.location.origin}`;
       {!isFinished ? (
         <div
           onClick={() => inputRef.current?.focus()}
-          className="relative w-full cursor-text rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
+          className="group relative w-full cursor-text rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
         >
           {/* Hidden real input that captures keystrokes */}
           <input
@@ -528,9 +539,28 @@ Try it: ${window.location.origin}`;
             })}
           </div>
 
-          {/* Bottom Action Controls (Exact match to screenshot buttons: Restart test, Competitive: Off + Zen Mode) */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            
+          {/* If unlimited mode and typing in progress: Dedicated prominent Finish Session button */}
+          {mode === 'unlimited' && isStarted && !isFinished && (
+            <div className="mt-8 flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => finishTest(inputRef.current?.value || input, elapsedSeconds || 1)}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-95 animate-pulse hover:animate-none cursor-pointer"
+              >
+                <Square className="w-3.5 h-3.5 fill-zinc-950" />
+                <span>Finish Session ({elapsedSeconds}s) & See Score</span>
+              </button>
+            </div>
+          )}
+
+          {/* Bottom Action Controls: Disappears while typing to eliminate distraction; reappears on reset or hover */}
+          <div
+            className={`mt-8 flex flex-wrap items-center justify-center gap-4 transition-all duration-300 ${
+              isStarted && !isFinished
+                ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+                : 'opacity-100'
+            }`}
+          >
             <button
               type="button"
               onClick={resetTest}
@@ -563,11 +593,14 @@ Try it: ${window.location.origin}`;
               <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
               <span>Open Focus Mode (New Tab) ↗</span>
             </a>
-
           </div>
 
-          {/* Tab + Enter keyboard shortcut indicator (exact match to screenshot) */}
-          <div className="mt-6 flex items-center justify-center gap-2 text-xs font-mono text-zinc-400 select-none">
+          {/* Tab + Enter keyboard shortcut indicator: Disappears while typing */}
+          <div
+            className={`mt-6 flex items-center justify-center gap-2 text-xs font-mono text-zinc-400 select-none transition-opacity duration-300 ${
+              isStarted && !isFinished ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'
+            }`}
+          >
             <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Tab</kbd>
             <span>+</span>
             <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Enter</kbd>

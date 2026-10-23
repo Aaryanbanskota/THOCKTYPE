@@ -6,6 +6,7 @@ import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
 import { VirtualKeyboard } from '@/components/VirtualKeyboard';
 import { AudioVisualizer } from '@/components/AudioVisualizer';
+import { SwitchIcon } from '@/components/SwitchIcon';
 import { SoundPackId } from '@/types/sound';
 import {
   Radio,
@@ -86,9 +87,10 @@ export default function SoundLabPage() {
                   : 'bg-zinc-900/40 hover:bg-zinc-800/50 border-zinc-800/80 text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <span
-                className="w-3.5 h-3.5 rounded-full mb-2 shadow-sm"
-                style={{ backgroundColor: pack.color }}
+              <SwitchIcon
+                id={id}
+                className="w-4 h-4 mb-2 shrink-0"
+                style={{ color: pack.color }}
               />
               <span className="font-semibold text-xs text-zinc-100 truncate w-full">
                 {pack.name}
@@ -113,9 +115,10 @@ export default function SoundLabPage() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-zinc-800/80">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: currentProfile?.color }}
+              <SwitchIcon
+                id={activePack}
+                className="w-4 h-4 shrink-0"
+                style={{ color: currentProfile?.color }}
               />
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
                 {currentProfile?.category} Profile

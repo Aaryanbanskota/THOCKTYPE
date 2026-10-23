@@ -6,7 +6,8 @@ import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES } from '@/lib/sound-profiles';
 import { generateRandomWords } from '@/lib/word-banks';
 import { SoundPackId } from '@/types/sound';
-import { Maximize2, Minimize2, RotateCcw, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { Maximize2, Minimize2, RotateCcw, ArrowLeft, Volume2, VolumeX, Square } from 'lucide-react';
+import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
 
 function FocusModeContent() {
@@ -120,8 +121,13 @@ function FocusModeContent() {
 
     setInput(val);
 
-    if (val.length >= fullText.length) {
-      finishTest(val, isUnlimited ? timeLeft : initialDuration - timeLeft);
+    // In unlimited mode: automatically stream more words as user types
+    if (isUnlimited && val.length > fullText.length - 80) {
+      setWords((prev) => [...prev, ...generateRandomWords(50)]);
+    }
+
+    if (!isUnlimited && val.length >= fullText.length) {
+      finishTest(val, initialDuration - timeLeft);
     }
   };
 
@@ -152,7 +158,11 @@ function FocusModeContent() {
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        resetTest();
+        if (isUnlimited && isStarted && !isFinished && input.length > 0) {
+          finishTest(inputRef.current?.value || input, timeLeft);
+        } else {
+          resetTest();
+        }
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -231,6 +241,16 @@ function FocusModeContent() {
           <span className="font-mono text-3xl sm:text-4xl font-bold text-amber-400 tracking-tight">
             {timeLeft}s
           </span>
+          {isUnlimited && isStarted && !isFinished && (
+            <button
+              type="button"
+              onClick={() => finishTest(inputRef.current?.value || input, timeLeft)}
+              className="mt-1.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono text-[11px] font-bold shadow-md transition-all active:scale-95 animate-pulse hover:animate-none cursor-pointer"
+            >
+              <Square className="w-3 h-3 fill-zinc-950" />
+              <span>Finish ({timeLeft}s) & See Score</span>
+            </button>
+          )}
         </div>
 
         {/* Right tools (Fullscreen + Mute) */}
@@ -326,8 +346,13 @@ function FocusModeContent() {
       </div>
 
       {/* Subtle Bottom Hint */}
-      <div className="text-xs font-mono text-zinc-600">
-        <span className="opacity-40">Tab + Enter to restart • Switch: {currentProfile?.name}</span>
+      <div className="flex items-center gap-2 text-xs font-mono text-zinc-600">
+        <SwitchIcon
+          id={activePack}
+          className="w-3.5 h-3.5 opacity-60"
+          style={{ color: currentProfile?.color }}
+        />
+        <span className="opacity-50">Tab + Enter to restart • {currentProfile?.name}</span>
       </div>
 
     </div>

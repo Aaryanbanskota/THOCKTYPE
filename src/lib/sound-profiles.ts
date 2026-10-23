@@ -15,7 +15,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Loud',
     actuation: '50g (Clicky stem)',
     bottomOut: '60g bottom-out',
-    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3']
+    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3'],
+    iconName: 'Snowflake'
   },
   s2: {
     id: 's2',
@@ -31,7 +32,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Medium',
     actuation: '45g (Smooth linear)',
     bottomOut: '55g bottom-out',
-    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3']
+    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3'],
+    iconName: 'Gem'
   },
   s3: {
     id: 's3',
@@ -47,7 +49,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Medium',
     actuation: '55g (Subtle bump)',
     bottomOut: '62g bottom-out',
-    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3']
+    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3'],
+    iconName: 'Nut'
   },
   s4: {
     id: 's4',
@@ -63,7 +66,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Quiet',
     actuation: '62g (Silent dampened)',
     bottomOut: '67g bottom-out',
-    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3']
+    sampleFiles: ['20.mp3', '21.mp3', '22.mp3', '23.mp3', '24.mp3', '57.mp3', '28.mp3'],
+    iconName: 'Moon'
   },
   s5: {
     id: 's5',
@@ -79,7 +83,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Medium',
     actuation: '42g (Featherweight linear)',
     bottomOut: '50g bottom-out',
-    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3']
+    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3'],
+    iconName: 'Mountain'
   },
   s6: {
     id: 's6',
@@ -95,7 +100,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Quiet',
     actuation: '55g (Lubed stem)',
     bottomOut: '65g bottom-out',
-    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3']
+    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3'],
+    iconName: 'Disc'
   },
   s7: {
     id: 's7',
@@ -111,7 +117,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Medium',
     actuation: '48g (Polished linear)',
     bottomOut: '58g bottom-out',
-    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3']
+    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3'],
+    iconName: 'Wind'
   },
   s8: {
     id: 's8',
@@ -127,7 +134,8 @@ export const SWITCH_PROFILES: Record<SoundPackId, SwitchProfile> = {
     loudness: 'Loud',
     actuation: '55g (POM housing)',
     bottomOut: '70g bottom-out',
-    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3']
+    sampleFiles: ['1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3', '201.mp3', '301.mp3'],
+    iconName: 'Coffee'
   }
 };
 

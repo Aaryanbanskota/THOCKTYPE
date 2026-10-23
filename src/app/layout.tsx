@@ -30,7 +30,11 @@ export const metadata: Metadata = {
     'cream clack',
     'typelouder',
     'monkeytype'
-  ]
+  ],
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png'
+  }
 };
 
 export default function RootLayout({

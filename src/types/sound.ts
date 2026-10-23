@@ -14,6 +14,7 @@ export interface SwitchProfile {
   actuation: string;
   bottomOut: string;
   sampleFiles: string[];
+  iconName: 'Snowflake' | 'Gem' | 'Nut' | 'Moon' | 'Mountain' | 'Disc' | 'Wind' | 'Coffee';
 }
 
 export interface SoundEngineOptions {

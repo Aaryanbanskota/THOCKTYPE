@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Keyboard, Headphones, Cpu, Sparkles } from 'lucide-react';
+import { Headphones, Cpu, Sparkles } from 'lucide-react';
 
 export function Footer() {
   const pathname = usePathname();
@@ -20,9 +21,15 @@ export function Footer() {
           
           {/* Col 1: About */}
           <div className="md:col-span-2 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                <Keyboard className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="THOCKTYPE Logo"
+                  width={28}
+                  height={28}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="font-bold text-zinc-200 tracking-wide">THOCKTYPE</span>
               <span className="text-[11px] text-zinc-500 font-mono">v2.0</span>

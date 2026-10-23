@@ -1,4 +1,9 @@
+/**
+ * Standard English typing words used across Monkeytype and typing tests.
+ * Words are randomly drawn to generate practice passages.
+ */
 export const COMMON_WORDS = [
+  // Core rhythm words (matching reference screenshot)
   'practice', 'pace', 'to', 'one', 'instead', 'follows', 'eyes', 'your', 'brings',
   'rhythm', 'and', 'on', 'allow', 'when', 'every', 'low', 'read', 'keystrokes',
   'fade', 'about', 'time', 'sound', 'switch', 'click', 'thock', 'smooth', 'linear',
@@ -11,9 +16,26 @@ export const COMMON_WORDS = [
   'rhythm', 'balance', 'natural', 'pure', 'calm', 'night', 'amber', 'frost', 'ruby',
   'chestnut', 'midnight', 'alpine', 'onyx', 'glacier', 'cream', 'clack', 'pop',
   'steady', 'cadence', 'thought', 'typing', 'repeat', 'fluid', 'habit', 'clean',
-  'solid', 'glide', 'moment', 'spark', 'breeze', 'echo', 'deep', 'quick', 'shift',
-  'stable', 'stroke', 'craft', 'sense', 'vibe', 'relax', 'learn', 'grow', 'sharp',
-  'tempo', 'style', 'power', 'grace', 'pulse', 'drift', 'stone', 'shade', 'reach'
+  'solid', 'moment', 'spark', 'breeze', 'echo', 'deep', 'quick', 'shift',
+  'stable', 'stroke', 'sense', 'vibe', 'relax', 'learn', 'grow',
+  'style', 'power', 'grace', 'pulse', 'drift', 'shade', 'reach',
+
+  // Common high-frequency English practice vocabulary
+  'the', 'be', 'of', 'in', 'that', 'have', 'it', 'for', 'not', 'with', 'he',
+  'as', 'you', 'do', 'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we',
+  'say', 'her', 'she', 'or', 'an', 'will', 'my', 'all', 'would', 'there',
+  'their', 'what', 'so', 'up', 'out', 'if', 'who', 'get', 'which', 'go',
+  'me', 'make', 'can', 'like', 'no', 'just', 'him', 'know', 'take', 'person',
+  'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see', 'other',
+  'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think',
+  'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first',
+  'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these', 'give',
+  'day', 'most', 'us', 'water', 'long', 'find', 'right', 'small', 'large',
+  'house', 'hold', 'turn', 'start', 'show', 'keep', 'run', 'never', 'last',
+  'might', 'great', 'always', 'where', 'open', 'same', 'begin', 'life',
+  'still', 'between', 'under', 'never', 'place', 'while', 'near', 'state',
+  'write', 'move', 'point', 'call', 'ask', 'number', 'system', 'program',
+  'play', 'build', 'create', 'sound', 'simple', 'detail', 'energy', 'signal'
 ];
 
 export const KEYBOARD_QUOTES = [
@@ -24,6 +46,9 @@ export const KEYBOARD_QUOTES = [
   'Typing at speed is about rhythm rather than raw force, letting your fingers glide effortlessly from key to key across the plate.'
 ];
 
+/**
+ * Randomly samples words from the curated bank.
+ */
 export function generateRandomWords(count: number = 50): string[] {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {

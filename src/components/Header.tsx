@@ -2,13 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
+import { SwitchIcon } from '@/components/SwitchIcon';
 import {
   Volume2,
   VolumeX,
-  Keyboard,
   ChevronDown,
   Sliders,
   Sparkles,
@@ -63,10 +64,17 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
         
-        {/* Left: Minimal Clean Logo */}
+        {/* Left: Custom Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
-            <Keyboard className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
+          <div className="w-8 h-8 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-md shadow-amber-500/10 group-hover:scale-105 transition-transform">
+            <Image
+              src="/logo.png"
+              alt="THOCKTYPE Logo"
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+              priority
+            />
           </div>
           <span className="font-extrabold text-sm tracking-wider text-zinc-100 group-hover:text-amber-400 transition-colors">
             THOCKTYPE
@@ -120,9 +128,10 @@ export function Header() {
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 text-xs text-zinc-200 transition-all shadow-sm"
               title="Change mechanical switch sound"
             >
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-zinc-950"
-                style={{ backgroundColor: currentProfile?.color }}
+              <SwitchIcon
+                id={activePack}
+                className="w-3.5 h-3.5 shrink-0"
+                style={{ color: currentProfile?.color }}
               />
               <span className="font-semibold text-zinc-200 text-xs max-w-[100px] sm:max-w-[130px] truncate">
                 {currentProfile?.name}
@@ -166,9 +175,10 @@ export function Header() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full"
-                            style={{ backgroundColor: pack.color }}
+                          <SwitchIcon
+                            id={id}
+                            className="w-4 h-4 shrink-0"
+                            style={{ color: pack.color }}
                           />
                           <div>
                             <div className="text-zinc-100 text-xs font-medium">{pack.name}</div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
 import { VirtualKeyboard } from '@/components/VirtualKeyboard';
+import { SwitchIcon } from '@/components/SwitchIcon';
 import { SoundPackId } from '@/types/sound';
 import {
   Flame,
@@ -128,9 +129,10 @@ export default function HomePage() {
                     borderColor: isSelected ? pack.color : undefined
                   }}
                 >
-                  <span
-                    className="w-2 h-2 rounded-full mb-1"
-                    style={{ backgroundColor: pack.color }}
+                  <SwitchIcon
+                    id={id}
+                    className="w-3.5 h-3.5 mb-1 shrink-0"
+                    style={{ color: pack.color }}
                   />
                   <span className="truncate max-w-full text-center leading-tight">
                     {pack.name.split(' ')[0]}
@@ -186,9 +188,10 @@ export default function HomePage() {
                   {/* Category & Pitch Badge */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shadow-sm"
-                        style={{ backgroundColor: pack.color }}
+                      <SwitchIcon
+                        id={id}
+                        className="w-4 h-4 shrink-0"
+                        style={{ color: pack.color }}
                       />
                       <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider font-mono">
                         {pack.category}
