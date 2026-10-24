@@ -71,6 +71,7 @@ export function TypingTest() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
+  const lastLineTopRef = useRef<number>(0);
   const pressedKeysRef = useRef<Set<string>>(new Set());
   const keydownSoundPlayedRef = useRef<boolean>(false);
 
@@ -111,6 +112,11 @@ export function TypingTest() {
     correctedErrorsRef.current = 0;
     totalErrorsCommittedRef.current = 0;
     missedKeysRef.current = {};
+    lastLineTopRef.current = 0;
+
+    if (textContainerRef.current) {
+      textContainerRef.current.scrollTop = 0;
+    }
 
     setInput('');
     setIsStarted(false);
@@ -405,9 +411,10 @@ export function TypingTest() {
     const currentExactElapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
     calculateLiveStats(val, currentExactElapsed);
 
-    // Infinite word stream in unlimited mode
-    if (mode === 'unlimited' && val.length > fullText.length - 80) {
-      setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 50)]);
+    // Keep generating new words infinitely for time and unlimited modes:
+    // When remaining untyped text drops below 140 characters, seamlessly append 60 more words!
+    if ((mode === 'time' || mode === 'unlimited') && (fullText.length - val.length) < 140) {
+      setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 60)]);
     }
 
     // In words mode: finish when target reached
@@ -482,6 +489,16 @@ export function TypingTest() {
         window.open(`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`, '_blank');
       }
 
+      // Global restart hotkey: Tab + Enter (or Enter directly when finished)
+      if (e.key === 'Tab') {
+        tabPressed = true;
+      }
+      if (e.key === 'Enter' && (tabPressed || isFinished)) {
+        e.preventDefault();
+        resetTest();
+        return;
+      }
+
       // Shortcut: Alt + 1-8 to switch sound packs
       if (e.altKey && e.key >= '1' && e.key <= '8') {
         const index = parseInt(e.key, 10) - 1;
@@ -492,10 +509,10 @@ export function TypingTest() {
         }
       }
 
-      // Shortcut: Esc to finish unlimited session or reset
+      // Shortcut: Esc to finish session or reset
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (mode === 'unlimited' && isStarted && !isFinished && input.length > 0) {
+        if (isStarted && !isFinished && input.length > 5) {
           finishTest(inputRef.current?.value || input, elapsedSeconds || 1);
         } else {
           resetTest();
@@ -524,17 +541,28 @@ export function TypingTest() {
     };
   }, [resetTest, mode, isStarted, isFinished, input, elapsedSeconds, duration, activePack, setActivePack, playKey, finishTest]);
 
-  // Keep active letter in view
+  // Line-by-line auto-scroll: smoothly rolls up finished lines so upcoming text is always visible
   useEffect(() => {
-    if (activeCharRef.current && textContainerRef.current) {
-      const container = textContainerRef.current;
-      const charEl = activeCharRef.current;
-      const offsetTop = charEl.offsetTop - container.offsetTop;
-      
-      // Auto-scroll smooth if text goes beyond 2 lines
-      if (offsetTop > 90) {
+    if (!activeCharRef.current || !textContainerRef.current) return;
+    const container = textContainerRef.current;
+    const charEl = activeCharRef.current;
+
+    const charTop = charEl.offsetTop;
+    const charHeight = charEl.offsetHeight || 40;
+
+    if (charTop !== lastLineTopRef.current) {
+      lastLineTopRef.current = charTop;
+
+      // Keep active line as line 2 of the viewport (or line 1 if at top)
+      if (charTop > charHeight * 1.5) {
+        const targetScroll = charTop - charHeight;
         container.scrollTo({
-          top: offsetTop - 45,
+          top: targetScroll,
+          behavior: 'smooth'
+        });
+      } else {
+        container.scrollTo({
+          top: 0,
           behavior: 'smooth'
         });
       }
@@ -788,7 +816,7 @@ Benchmark verified: ${window.location.origin}`;
           {/* Rendered Text with Caret and Character States */}
           <div
             ref={textContainerRef}
-            className="h-32 xs:h-36 sm:h-44 overflow-hidden font-mono text-lg xs:text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 transition-all pointer-events-none relative z-0"
+            className="h-32 xs:h-36 sm:h-44 overflow-hidden font-mono text-lg xs:text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 pointer-events-none relative z-0"
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
@@ -824,7 +852,7 @@ Benchmark verified: ${window.location.origin}`;
 
           {/* If unlimited mode and typing in progress: Dedicated Pause / Finish button */}
           {mode === 'unlimited' && isStarted && (
-            <div className="mt-8 flex items-center justify-center animate-in fade-in duration-200">
+            <div className="relative z-20 mt-8 flex items-center justify-center animate-in fade-in duration-200 pointer-events-auto">
               <button
                 type="button"
                 onClick={() => finishTest(inputRef.current?.value || input, elapsedSeconds || 1)}
@@ -836,14 +864,29 @@ Benchmark verified: ${window.location.origin}`;
             </div>
           )}
 
+          {/* If time mode and typing in progress for at least 5s: Option to Finish Early */}
+          {mode === 'time' && isStarted && elapsedSeconds >= 5 && (
+            <div className="relative z-20 mt-8 flex items-center justify-center animate-in fade-in duration-200 pointer-events-auto">
+              <button
+                type="button"
+                onClick={() => finishTest(inputRef.current?.value || input, elapsedSeconds || 1)}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-400 font-mono text-xs font-semibold tracking-wide border border-zinc-700 shadow-md transition-all active:scale-95 cursor-pointer"
+                title="Finish benchmark and calculate score (or press Esc)"
+              >
+                <Square className="w-3.5 h-3.5 text-amber-400" />
+                <span>Finish Early ({elapsedSeconds}s) & Calculate Score</span>
+              </button>
+            </div>
+          )}
+
           {/* Bottom Action Controls: COMPLETELY DISAPPEAR when typing starts as requested! */}
           {!isStarted && (
-            <div className="mt-8 flex flex-col items-center gap-5 transition-all duration-200">
+            <div className="relative z-20 mt-8 flex flex-col items-center gap-5 transition-all duration-200 pointer-events-auto">
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <button
                   type="button"
                   onClick={resetTest}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95 cursor-pointer pointer-events-auto"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
                   <span>Restart test</span>
@@ -852,7 +895,7 @@ Benchmark verified: ${window.location.origin}`;
                 <button
                   type="button"
                   onClick={() => setCompetitive(!competitive)}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all active:scale-95 ${
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all active:scale-95 cursor-pointer pointer-events-auto ${
                     competitive
                       ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 shadow-sm'
                       : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border-zinc-700/60 shadow-md'
@@ -863,10 +906,10 @@ Benchmark verified: ${window.location.origin}`;
                 </button>
 
                 <a
-                  href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`}
+                  href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}&diff=${difficulty}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 text-xs font-bold tracking-wide border border-amber-500/40 shadow-md shadow-amber-500/10 transition-all hover:scale-105 active:scale-95"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 text-xs font-bold tracking-wide border border-amber-500/40 shadow-md shadow-amber-500/10 transition-all hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto"
                   title="Open pure full-screen textbox only in a new tab (Shortcut: Alt + F)"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
@@ -1213,7 +1256,7 @@ Benchmark verified: ${window.location.origin}`;
                 href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}&diff=${difficulty}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <Maximize2 className="w-4 h-4 text-amber-400" />
                 <span>Focus Mode</span>
@@ -1221,7 +1264,7 @@ Benchmark verified: ${window.location.origin}`;
 
               <Link
                 href="/profile"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 shadow-sm transition-all"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 shadow-sm transition-all cursor-pointer"
               >
                 <TrendingUp className="w-4 h-4 text-amber-400" />
                 <span>Profile & Growth →</span>
@@ -1229,7 +1272,7 @@ Benchmark verified: ${window.location.origin}`;
 
               <Link
                 href="/sounds"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all cursor-pointer"
               >
                 <Layers className="w-4 h-4 text-sky-400" />
                 <span>Sound Studio</span>

@@ -74,6 +74,7 @@ function FocusModeContent() {
   const startTimeRef = useRef<number | null>(null);
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
+  const lastLineTopRef = useRef<number>(0);
   const pressedKeysRef = useRef<Set<string>>(new Set());
   const keydownSoundPlayedRef = useRef<boolean>(false);
 
@@ -102,6 +103,11 @@ function FocusModeContent() {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
     startTimeRef.current = null;
+    lastLineTopRef.current = 0;
+
+    if (textContainerRef.current) {
+      textContainerRef.current.scrollTop = 0;
+    }
 
     setInput('');
     setIsStarted(false);
@@ -251,9 +257,10 @@ function FocusModeContent() {
 
     setInput(val);
 
-    // Continuous word streaming for unlimited mode
-    if (isUnlimited && val.length > fullText.length - 80) {
-      setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 50)]);
+    // Continuous word streaming for time and unlimited modes:
+    // When remaining untyped text drops below 140 characters, seamlessly append 60 more words!
+    if ((isUnlimited || selectedMode === 'time') && (fullText.length - val.length) < 140) {
+      setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 60)]);
     }
 
     // Words mode completion
@@ -301,14 +308,17 @@ function FocusModeContent() {
       }
 
       if (e.key === 'Tab') tabDown = true;
-      if (e.key === 'Enter' && tabDown) {
+      if (e.key === 'Enter' && (tabDown || isFinished)) {
         e.preventDefault();
         resetTest();
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (isUnlimited && isStarted && !isFinished && input.length > 0) {
-          finishTest(inputRef.current?.value || input, timeLeft);
+        if (isStarted && !isFinished && input.length > 5) {
+          const exactElapsed = startTimeRef.current
+            ? (performance.now() - startTimeRef.current) / 1000
+            : (isUnlimited ? timeLeft : selectedDuration - timeLeft);
+          finishTest(inputRef.current?.value || input, Math.max(1, exactElapsed));
         } else {
           resetTest();
         }
@@ -330,16 +340,26 @@ function FocusModeContent() {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('thocktype:restart-test', onRestartEvent);
     };
-  }, [resetTest, isConfigured, isUnlimited, isStarted, isFinished, input, timeLeft, finishTest]);
+  }, [resetTest, isConfigured, isUnlimited, isStarted, isFinished, input, timeLeft, selectedDuration, finishTest]);
 
-  // Auto-scroll smooth
+  // Line-by-line auto-scroll: smoothly rolls up finished lines so upcoming text is always visible
   useEffect(() => {
-    if (activeCharRef.current && textContainerRef.current) {
-      const container = textContainerRef.current;
-      const charEl = activeCharRef.current;
-      const offsetTop = charEl.offsetTop - container.offsetTop;
-      if (offsetTop > 90) {
-        container.scrollTo({ top: offsetTop - 45, behavior: 'smooth' });
+    if (!activeCharRef.current || !textContainerRef.current) return;
+    const container = textContainerRef.current;
+    const charEl = activeCharRef.current;
+
+    const charTop = charEl.offsetTop;
+    const charHeight = charEl.offsetHeight || 44;
+
+    if (charTop !== lastLineTopRef.current) {
+      lastLineTopRef.current = charTop;
+
+      // Keep active line as line 2 of the viewport (or line 1 if at top)
+      if (charTop > charHeight * 1.5) {
+        const targetScroll = charTop - charHeight;
+        container.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      } else {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   }, [input]);
@@ -545,44 +565,50 @@ function FocusModeContent() {
    * ========================================================================= */
   return (
     <div
-      onClick={() => inputRef.current?.focus()}
-      className="fixed inset-0 w-full h-[100dvh] bg-[#121314] text-zinc-100 flex flex-col items-center justify-between p-4 xs:p-6 sm:p-12 select-none overflow-hidden cursor-text"
+      onClick={() => {
+        if (!isFinished) inputRef.current?.focus();
+      }}
+      className={`fixed inset-0 w-full h-[100dvh] bg-[#121314] text-zinc-100 flex flex-col items-center justify-between p-4 xs:p-6 sm:p-12 select-none overflow-hidden ${
+        isFinished ? 'cursor-default' : 'cursor-text'
+      }`}
     >
       {/* Mobile Tap-To-Focus Indicator */}
-      {!isStarted && !isInputFocused && (
+      {!isStarted && !isInputFocused && !isFinished && (
         <div className="sm:hidden absolute top-14 z-20 pointer-events-none flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-xs font-mono text-amber-300 animate-pulse shadow-md">
           <span>Tap screen to open keyboard & type</span>
         </div>
       )}
 
-      {/* Real input capturing typing on desktop & mobile soft keyboards */}
-      <input
-        ref={inputRef}
-        type="text"
-        value={input}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}
-        onFocus={() => setIsInputFocused(true)}
-        onBlur={() => setIsInputFocused(false)}
-        autoFocus
-        autoCapitalize="none"
-        autoComplete="off"
-        autoCorrect="off"
-        spellCheck={false}
-        inputMode="text"
-        enterKeyHint="done"
-        className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-text select-none text-base"
-        style={{ fontSize: '16px' }}
-        aria-label="Zen typing input"
-      />
+      {/* Real input capturing typing on desktop & mobile soft keyboards (Only rendered when not finished) */}
+      {!isFinished && (
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
+          onFocus={() => setIsInputFocused(true)}
+          onBlur={() => setIsInputFocused(false)}
+          autoFocus
+          autoCapitalize="none"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          inputMode="text"
+          enterKeyHint="done"
+          className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-text select-none text-base"
+          style={{ fontSize: '16px' }}
+          aria-label="Zen typing input"
+        />
+      )}
 
       {/* Top Floating Controls: Minimal Timer & Discreet controls */}
       <div className="w-full flex items-center justify-between text-zinc-500 text-xs relative z-20">
         {/* Subtle Back link */}
         <Link
           href="/test"
-          className="flex items-center gap-1.5 opacity-40 hover:opacity-100 text-zinc-400 hover:text-zinc-100 transition-opacity"
+          className="flex items-center gap-1.5 opacity-40 hover:opacity-100 text-zinc-400 hover:text-zinc-100 transition-opacity cursor-pointer"
           title="Exit Zen Mode to standard test"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -590,18 +616,24 @@ function FocusModeContent() {
         </Link>
 
         {/* Minimal Timer strictly centered at top */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center relative z-30">
           <span className="font-mono text-2xl xs:text-3xl sm:text-4xl font-bold text-amber-400 tracking-tight">
             {timeLeft}s
           </span>
-          {isUnlimited && isStarted && !isFinished && (
+          {isStarted && !isFinished && (
             <button
               type="button"
-              onClick={() => finishTest(inputRef.current?.value || input, timeLeft)}
-              className="mt-1.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono text-[11px] font-bold shadow-md transition-all active:scale-95 animate-pulse hover:animate-none cursor-pointer"
+              onClick={() => {
+                const exactElapsed = startTimeRef.current
+                  ? (performance.now() - startTimeRef.current) / 1000
+                  : (isUnlimited ? timeLeft : selectedDuration - timeLeft);
+                finishTest(inputRef.current?.value || input, Math.max(1, exactElapsed));
+              }}
+              className="mt-1.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700 font-mono text-[11px] font-bold shadow-md transition-all active:scale-95 cursor-pointer pointer-events-auto"
+              title="Finish session and calculate score (or press Esc)"
             >
-              <Square className="w-3 h-3 fill-zinc-950" />
-              <span>Finish ({timeLeft}s) & See Score</span>
+              <Square className="w-3 h-3 text-amber-400" />
+              <span>Finish ({isUnlimited ? `${timeLeft}s` : `${Math.max(1, Math.round(selectedDuration - timeLeft))}s`})</span>
             </button>
           )}
         </div>
@@ -633,7 +665,7 @@ function FocusModeContent() {
         {!isFinished ? (
           <div
             ref={textContainerRef}
-            className="h-36 sm:h-56 overflow-hidden font-mono text-xl xs:text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-wide select-none transition-all text-left pointer-events-none relative z-0"
+            className="h-36 sm:h-56 overflow-hidden font-mono text-xl xs:text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-wide select-none text-left pointer-events-none relative z-0"
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
@@ -667,7 +699,7 @@ function FocusModeContent() {
           </div>
         ) : (
           /* Finished State: Minimal results */
-          <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-30 flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-200 cursor-default pointer-events-auto">
             <div className="flex items-center gap-8 sm:gap-12 font-mono">
               <div>
                 <div className="text-xs uppercase text-zinc-500">WPM</div>
@@ -692,7 +724,7 @@ function FocusModeContent() {
               <button
                 type="button"
                 onClick={resetTest}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-lg transition-all active:scale-95"
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs tracking-wide shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Type Again (Tab + Enter)</span>
@@ -700,14 +732,14 @@ function FocusModeContent() {
 
               <Link
                 href="/test"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 transition-all"
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 transition-all hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto"
               >
                 <span>Full Test Mode</span>
               </Link>
 
               <Link
                 href="/profile"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 transition-all"
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 transition-all hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto"
               >
                 <span>View Profile →</span>
               </Link>
