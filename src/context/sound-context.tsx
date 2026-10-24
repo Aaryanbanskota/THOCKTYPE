@@ -43,6 +43,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   const initAudio = useCallback(() => {
     if (typeof window === 'undefined') return;
     const engine = getSoundEngine();
+    engine.unlockAudio();
     const ctx = engine.getAudioContext();
     if (ctx) {
       setIsAudioReady(true);
@@ -52,22 +53,42 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   }, [activePack]);
 
   useEffect(() => {
-    // Attempt audio unlock on first global click or keydown
-    const handleFirstGesture = () => {
-      if (!isInitialized.current) {
-        isInitialized.current = true;
-        initAudio();
-      }
+    // Proactively preload active sound pack immediately on mount
+    if (typeof window !== 'undefined') {
+      const engine = getSoundEngine();
+      engine.preloadPack(activePack);
+    }
+
+    // Attempt audio unlock on touch, click, or keydown on mobile & desktop
+    const handleGesture = () => {
+      if (isInitialized.current) return;
+      isInitialized.current = true;
+      const engine = getSoundEngine();
+      engine.unlockAudio();
+      initAudio();
+
+      // Clean up gesture listeners immediately once audio is unlocked
+      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('touchend', handleGesture);
+      window.removeEventListener('pointerdown', handleGesture);
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('keydown', handleGesture);
     };
 
-    window.addEventListener('pointerdown', handleFirstGesture, { once: true });
-    window.addEventListener('keydown', handleFirstGesture, { once: true });
+    window.addEventListener('touchstart', handleGesture, { passive: true });
+    window.addEventListener('touchend', handleGesture, { passive: true });
+    window.addEventListener('pointerdown', handleGesture, { passive: true });
+    window.addEventListener('click', handleGesture, { passive: true });
+    window.addEventListener('keydown', handleGesture);
 
     return () => {
-      window.removeEventListener('pointerdown', handleFirstGesture);
-      window.removeEventListener('keydown', handleFirstGesture);
+      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('touchend', handleGesture);
+      window.removeEventListener('pointerdown', handleGesture);
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('keydown', handleGesture);
     };
-  }, [initAudio]);
+  }, [initAudio, activePack]);
 
   const setActivePack = useCallback((pack: SoundPackId) => {
     setActivePackState(pack);

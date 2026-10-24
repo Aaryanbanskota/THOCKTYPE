@@ -83,6 +83,7 @@ class SoundEngine {
   private masterGain: GainNode | null = null;
   private analyser: AnalyserNode | null = null;
   private deskmatFilter: BiquadFilterNode | null = null;
+  private presenceFilter: BiquadFilterNode | null = null;
   private stabilizerFilter: BiquadFilterNode | null = null;
 
   private bufferCache: Map<string, AudioBuffer> = new Map();
@@ -128,6 +129,13 @@ class SoundEngine {
       this.deskmatFilter.frequency.value = 180;
       this.deskmatFilter.gain.value = this.options.deskmatResonance ? 3 : 0;
 
+      // Presence / Snap Clarity Filter (crisp tactile actuation definition on phone speakers & headphones)
+      this.presenceFilter = this.ctx.createBiquadFilter();
+      this.presenceFilter.type = 'peaking';
+      this.presenceFilter.frequency.value = 3400;
+      this.presenceFilter.Q.value = 1.0;
+      this.presenceFilter.gain.value = 2.0;
+
       // Spacebar stabilizer sub-bass resonance filter
       this.stabilizerFilter = this.ctx.createBiquadFilter();
       this.stabilizerFilter.type = 'peaking';
@@ -135,16 +143,41 @@ class SoundEngine {
       this.stabilizerFilter.Q.value = 1.8;
       this.stabilizerFilter.gain.value = 4.5;
 
-      // Routing: source -> [pan] -> [deskmat] -> masterGain -> analyser -> destination
-      this.deskmatFilter.connect(this.masterGain);
+      // Routing: source -> [pan] -> deskmatFilter -> presenceFilter -> masterGain -> analyser -> destination
+      this.deskmatFilter.connect(this.presenceFilter);
+      this.presenceFilter.connect(this.masterGain);
       this.masterGain.connect(this.analyser);
       this.analyser.connect(this.ctx.destination);
     }
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
+  }
+
+  /**
+   * Unlock Web Audio API on mobile touch/pointer events (iOS Safari & Android Chrome)
+   */
+  public unlockAudio(): void {
+    if (typeof window === 'undefined') return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    // Play 1-sample silent buffer to unlock iOS Safari hardware audio pipeline
+    try {
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    } catch {
+      // Ignore
+    }
   }
 
   public getAnalyser(): AnalyserNode | null {
@@ -247,11 +280,42 @@ class SoundEngine {
   }
 
   /**
+   * Instant acoustic mechanical click synthesis fallback
+   * Used while sound files are still transferring over cellular / mobile network
+   */
+  private playSynthesizedFallback(ctx: AudioContext): void {
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(580, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.035);
+
+      gain.gain.setValueAtTime(Math.max(0.01, this.options.volume * 0.5), now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain || ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.04);
+    } catch {
+      // Ignore
+    }
+  }
+
+  /**
    * Handle keydown: Plays mechanical bottom-out actuation
    */
   public triggerKeyDown(code: string = 'KeyF', customPack?: SoundPackId): void {
     const ctx = this.getAudioContext();
     if (!ctx) return;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
 
     const pack = customPack || this.activePack;
     if (!this.loadedPacks.has(pack)) {
@@ -283,7 +347,20 @@ class SoundEngine {
         }
       }
     }
-    if (!buffer) return;
+
+    // If still no buffer from this pack, borrow any loaded buffer from any pack
+    if (!buffer) {
+      for (const [, v] of this.bufferCache.entries()) {
+        buffer = v;
+        break;
+      }
+    }
+
+    // If audio files are still downloading over mobile network, synthesize an immediate click
+    if (!buffer) {
+      this.playSynthesizedFallback(ctx);
+      return;
+    }
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;

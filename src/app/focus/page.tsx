@@ -4,7 +4,8 @@ import React, { Suspense, useState, useEffect, useRef, useCallback, useMemo } fr
 import { useSearchParams } from 'next/navigation';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
-import { generateRandomWords, generateTextByDifficulty } from '@/lib/word-banks';
+import { generateRandomWords, generateTextByDifficulty, COMMON_WORDS } from '@/lib/word-banks';
+import { saveTestToProfile } from '@/lib/profile-storage';
 import { SoundPackId, DifficultyMode } from '@/types/sound';
 import {
   Maximize2,
@@ -55,13 +56,14 @@ function FocusModeContent() {
   const initialDuration = isUnlimited ? 0 : selectedDuration;
 
   const [timeLeft, setTimeLeft] = useState<number>(initialDuration);
-  const [words, setWords] = useState<string[]>([]);
+  const [words, setWords] = useState<string[]>(() => COMMON_WORDS.slice(0, 70));
   const fullText = useMemo(() => words.join(' '), [words]);
 
   const [input, setInput] = useState<string>('');
   const [isStarted, setIsStarted] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
 
   // Results
   const [finalWpm, setFinalWpm] = useState<number>(0);
@@ -73,6 +75,7 @@ function FocusModeContent() {
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
+  const keydownSoundPlayedRef = useRef<boolean>(false);
 
   // Apply pack if specified in query
   useEffect(() => {
@@ -147,15 +150,64 @@ function FocusModeContent() {
 
     const netWpm = Math.max(0, Math.round(((correctChars / 5) - incorrectChars) / minutes)) || 0;
     const acc = finalInput.length > 0 ? Math.round((correctChars / finalInput.length) * 1000) / 10 : 100;
+    const rawWpm = Math.round((finalInput.length / 5) / minutes) || 0;
 
     setFinalWpm(netWpm);
     setFinalAccuracy(acc);
-  }, [fullText]);
+
+    // Save session to local account
+    saveTestToProfile({
+      wpm: netWpm,
+      rawWpm,
+      accuracy: acc,
+      timeSpent: Math.round(exactSeconds),
+      exactSeconds: Math.round(exactSeconds * 100) / 100,
+      difficulty,
+      correctChars,
+      incorrectChars,
+      extraChars: Math.max(0, finalInput.length - fullText.length),
+      missedChars: Math.max(0, fullText.length - finalInput.length),
+      totalKeystrokes: finalInput.length,
+      backspaceCount: 0,
+      correctedErrors: 0,
+      totalErrorsCommitted: incorrectChars,
+      consistency: 90,
+      efficiency: 92,
+      kps: Math.round((finalInput.length / exactSeconds) * 10) / 10,
+      msPerKey: Math.round((exactSeconds / (finalInput.length || 1)) * 1000),
+      troubleKeys: [],
+      soundPack: activePack,
+      history: [],
+      report: {
+        tier: 'Zen Verified',
+        tierBadgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        projectedWpmMin: netWpm,
+        projectedWpmMax: netWpm + 15,
+        potentialHeadline: 'Zen Flow Complete',
+        motivationMessage: 'Pure focus achieved.',
+        harshDiagnostics: [],
+        keyTrainingRecommendation: 'Continue mindful typing.',
+        kps: Math.round((finalInput.length / exactSeconds) * 10) / 10,
+        msPerKey: Math.round((exactSeconds / (finalInput.length || 1)) * 1000),
+        efficiency: 92
+      }
+    });
+  }, [fullText, activePack, difficulty]);
 
   // Handle Input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isFinished) return;
-    const val = e.target.value;
+    let val = e.target.value;
+
+    // Mobile keyboard normalization
+    if (val.endsWith('. ') && !fullText.slice(0, val.length).endsWith('. ')) {
+      val = val.slice(0, -2) + '  ';
+    }
+    if (val.length === 1 && difficulty === 'easy' && fullText.length > 0) {
+      if (val[0].toLowerCase() === fullText[0].toLowerCase()) {
+        val = val.toLowerCase();
+      }
+    }
 
     if (!isStarted && val.length > 0) {
       setIsStarted(true);
@@ -177,6 +229,25 @@ function FocusModeContent() {
         }
       }, 100);
     }
+
+    // Mobile virtual keyboard audio fallback (when onKeyDown doesn't report key code)
+    if (!keydownSoundPlayedRef.current) {
+      if (val.length > input.length) {
+        const lastChar = val[val.length - 1];
+        let soundCode = 'KeyF';
+        if (lastChar === ' ') {
+          soundCode = 'Space';
+        } else if (lastChar >= '0' && lastChar <= '9') {
+          soundCode = `Digit${lastChar}`;
+        } else if (lastChar.toLowerCase() >= 'a' && lastChar.toLowerCase() <= 'z') {
+          soundCode = `Key${lastChar.toUpperCase()}`;
+        }
+        playKey(soundCode);
+      } else if (val.length < input.length) {
+        playKey('Backspace');
+      }
+    }
+    keydownSoundPlayedRef.current = false;
 
     setInput(val);
 
@@ -201,13 +272,20 @@ function FocusModeContent() {
       resetTest();
       return;
     }
-    pressedKeysRef.current.add(e.code);
-    playKey(e.code);
+    if (e.code && e.code !== 'Unidentified') {
+      pressedKeysRef.current.add(e.code);
+      playKey(e.code);
+      keydownSoundPlayedRef.current = true;
+    } else {
+      keydownSoundPlayedRef.current = false;
+    }
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    pressedKeysRef.current.delete(e.code);
-    releaseKey(e.code);
+    if (e.code && e.code !== 'Unidentified') {
+      pressedKeysRef.current.delete(e.code);
+      releaseKey(e.code);
+    }
   };
 
   // Global key bindings (Tab + Enter, Esc, Enter to start setup)
@@ -446,11 +524,14 @@ function FocusModeContent() {
           <div className="mt-8 pt-4 border-t border-zinc-800">
             <button
               type="button"
-              onClick={() => setIsConfigured(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-98"
+              onClick={() => {
+                setIsConfigured(true);
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-98 cursor-pointer"
             >
               <Flame className="w-4 h-4 fill-zinc-950" />
-              <span>Enter Zen Focus Mode (Press Enter)</span>
+              <span>Enter Zen Focus Mode</span>
             </button>
           </div>
 
@@ -467,7 +548,14 @@ function FocusModeContent() {
       onClick={() => inputRef.current?.focus()}
       className="fixed inset-0 w-full h-[100dvh] bg-[#121314] text-zinc-100 flex flex-col items-center justify-between p-4 xs:p-6 sm:p-12 select-none overflow-hidden cursor-text"
     >
-      {/* Hidden input capturing typing */}
+      {/* Mobile Tap-To-Focus Indicator */}
+      {!isStarted && !isInputFocused && (
+        <div className="sm:hidden absolute top-14 z-20 pointer-events-none flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-xs font-mono text-amber-300 animate-pulse shadow-md">
+          <span>Tap screen to open keyboard & type</span>
+        </div>
+      )}
+
+      {/* Real input capturing typing on desktop & mobile soft keyboards */}
       <input
         ref={inputRef}
         type="text"
@@ -475,17 +563,22 @@ function FocusModeContent() {
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
+        onFocus={() => setIsInputFocused(true)}
+        onBlur={() => setIsInputFocused(false)}
         autoFocus
         autoCapitalize="none"
         autoComplete="off"
         autoCorrect="off"
-        spellCheck="false"
-        className="absolute inset-0 opacity-0 pointer-events-none"
+        spellCheck={false}
+        inputMode="text"
+        enterKeyHint="done"
+        className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-text select-none text-base"
+        style={{ fontSize: '16px' }}
         aria-label="Zen typing input"
       />
 
       {/* Top Floating Controls: Minimal Timer & Discreet controls */}
-      <div className="w-full flex items-center justify-between text-zinc-500 text-xs">
+      <div className="w-full flex items-center justify-between text-zinc-500 text-xs relative z-20">
         {/* Subtle Back link */}
         <Link
           href="/test"
@@ -540,7 +633,7 @@ function FocusModeContent() {
         {!isFinished ? (
           <div
             ref={textContainerRef}
-            className="h-36 sm:h-56 overflow-hidden font-mono text-xl xs:text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-wide select-none text-zinc-500 transition-all text-left"
+            className="h-36 sm:h-56 overflow-hidden font-mono text-xl xs:text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-wide select-none transition-all text-left pointer-events-none relative z-0"
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
@@ -549,21 +642,23 @@ function FocusModeContent() {
               const isCorrect = isTyped && typedChar === char;
               const isIncorrect = isTyped && typedChar !== char;
 
-              let charClass = 'text-zinc-600';
-              if (isCorrect) {
-                charClass = 'text-zinc-100';
+              let charClass = 'text-zinc-400';
+              if (isCurrent) {
+                charClass = 'text-amber-300 font-bold';
+              } else if (isCorrect) {
+                charClass = 'text-zinc-100 font-medium';
               } else if (isIncorrect) {
-                charClass = 'text-rose-400 underline decoration-rose-500';
+                charClass = 'text-rose-400 bg-rose-500/20 underline decoration-rose-500 font-medium';
               }
 
               return (
                 <span
                   key={index}
                   ref={isCurrent ? activeCharRef : null}
-                  className={`relative ${charClass} transition-colors duration-75`}
+                  className={`relative ${charClass}`}
                 >
                   {isCurrent && (
-                    <span className="absolute -left-[1.5px] top-1 bottom-1 w-[3px] rounded-full animate-pulse bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.9)]" />
+                    <span className="absolute -left-[1.5px] top-1 bottom-1 w-[3px] rounded-full animate-pulse bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.9)] will-change-transform" />
                   )}
                   {char}
                 </span>
@@ -608,6 +703,13 @@ function FocusModeContent() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 transition-all"
               >
                 <span>Full Test Mode</span>
+              </Link>
+
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 transition-all"
+              >
+                <span>View Profile →</span>
               </Link>
             </div>
           </div>

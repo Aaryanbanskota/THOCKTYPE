@@ -96,7 +96,7 @@ interface VirtualKeyboardProps {
   interactiveGlobal?: boolean;
 }
 
-export function VirtualKeyboard({ interactiveGlobal = true }: VirtualKeyboardProps) {
+function VirtualKeyboardComponent({ interactiveGlobal = true }: VirtualKeyboardProps) {
   const { activePack, playKey, releaseKey } = useSound();
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
 
@@ -110,8 +110,19 @@ export function VirtualKeyboard({ interactiveGlobal = true }: VirtualKeyboardPro
         return next;
       });
       playKey(code);
+
+      // Auto-release safeguard for mobile touch devices if pointerup is dropped
+      setTimeout(() => {
+        setActiveKeys((prev) => {
+          if (!prev.has(code)) return prev;
+          const next = new Set(prev);
+          next.delete(code);
+          return next;
+        });
+        releaseKey(code);
+      }, 300);
     },
-    [playKey]
+    [playKey, releaseKey]
   );
 
   const handleKeyUp = useCallback(
@@ -159,12 +170,12 @@ export function VirtualKeyboard({ interactiveGlobal = true }: VirtualKeyboardPro
   }, [interactiveGlobal, handleKeyDown, handleKeyUp]);
 
   return (
-    <div className="w-full flex flex-col items-center select-none">
+    <div className="w-full max-w-full flex flex-col items-center select-none overflow-hidden">
       {/* Keyboard Case */}
-      <div className="w-full max-w-4xl p-2 xs:p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-zinc-900 via-zinc-920 to-zinc-950 border-2 border-zinc-800 shadow-2xl shadow-black/80 relative">
+      <div className="w-full max-w-4xl p-2 xs:p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-zinc-900 via-zinc-920 to-zinc-950 border-2 border-zinc-800 shadow-2xl shadow-black/80 relative overflow-hidden">
         
         {/* Responsive Horizontal Scroll Wrapper for Mobile Viewports */}
-        <div className="w-full overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
+        <div className="w-full max-w-full overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
           <div className="min-w-[590px] sm:min-w-0 relative p-1.5 sm:p-3 rounded-xl sm:rounded-2xl bg-zinc-950/90 border border-zinc-800/80 shadow-inner space-y-1 sm:space-y-2">
             {KEYBOARD_ROWS.map((row, rIdx) => (
               <div key={rIdx} className="flex justify-center gap-1 sm:gap-1.5">
@@ -177,14 +188,9 @@ export function VirtualKeyboard({ interactiveGlobal = true }: VirtualKeyboardPro
                       key={key.code}
                       type="button"
                       aria-label={key.label || key.code}
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        handleKeyDown(key.code);
-                      }}
-                      onPointerUp={(e) => {
-                        e.preventDefault();
-                        handleKeyUp(key.code);
-                      }}
+                      onPointerDown={() => handleKeyDown(key.code)}
+                      onPointerUp={() => handleKeyUp(key.code)}
+                      onPointerCancel={() => handleKeyUp(key.code)}
                       onPointerLeave={() => {
                         if (activeKeys.has(key.code)) {
                           handleKeyUp(key.code);
@@ -252,3 +258,5 @@ export function VirtualKeyboard({ interactiveGlobal = true }: VirtualKeyboardPro
     </div>
   );
 }
+
+export const VirtualKeyboard = React.memo(VirtualKeyboardComponent);

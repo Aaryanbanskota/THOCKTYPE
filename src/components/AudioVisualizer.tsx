@@ -24,21 +24,64 @@ export function AudioVisualizer({ className = '', height = 48, barColor }: Audio
     if (!ctx) return;
 
     let animId: number;
+    let isMounted = true;
+    let idleFrames = 0;
     const bufferLength = analyser ? analyser.frequencyBinCount : 32;
     const dataArray = new Uint8Array(bufferLength);
 
     const render = () => {
+      if (!isMounted) return;
+
+      if (typeof document !== 'undefined' && document.hidden) {
+        animId = requestAnimationFrame(render);
+        return;
+      }
+
+      let hasSignal = false;
+      if (analyser) {
+        analyser.getByteFrequencyData(dataArray);
+        for (let j = 0; j < Math.min(bufferLength, 32); j++) {
+          if (dataArray[j] > 4) {
+            hasSignal = true;
+            break;
+          }
+        }
+      } else {
+        dataArray.fill(0);
+      }
+
+      // If audio is idle for half a second, pause expensive 60-120fps canvas rendering
+      if (!hasSignal) {
+        idleFrames++;
+        if (idleFrames > 25) {
+          const width = canvas.width;
+          const h = canvas.height;
+          ctx.clearRect(0, 0, width, h);
+          const bars = 24;
+          const barWidth = width / bars - 2;
+          ctx.fillStyle = `${color}22`;
+          for (let i = 0; i < bars; i++) {
+            const x = i * (barWidth + 2);
+            ctx.beginPath();
+            ctx.roundRect(x, h - 3, barWidth, 3, [2, 2, 0, 0]);
+            ctx.fill();
+          }
+
+          // Throttle idle polling to save battery & CPU
+          setTimeout(() => {
+            if (isMounted) animId = requestAnimationFrame(render);
+          }, 120);
+          return;
+        }
+      } else {
+        idleFrames = 0;
+      }
+
       animId = requestAnimationFrame(render);
 
       const width = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, width, h);
-
-      if (analyser) {
-        analyser.getByteFrequencyData(dataArray);
-      } else {
-        dataArray.fill(0);
-      }
 
       // Draw symmetrical frequency bars
       const bars = 24;
@@ -69,6 +112,7 @@ export function AudioVisualizer({ className = '', height = 48, barColor }: Audio
     render();
 
     return () => {
+      isMounted = false;
       cancelAnimationFrame(animId);
     };
   }, [analyser, color]);

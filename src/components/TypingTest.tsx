@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
-import { generateRandomWords, generateTextByDifficulty } from '@/lib/word-banks';
+import { generateRandomWords, generateTextByDifficulty, COMMON_WORDS } from '@/lib/word-banks';
 import { analyzeBenchmark } from '@/lib/benchmark-analyzer';
+import { saveTestToProfile } from '@/lib/profile-storage';
 import { SoundPackId, TestResults, WpmDataPoint, DifficultyMode } from '@/types/sound';
 import {
   RotateCcw,
@@ -44,13 +45,14 @@ export function TypingTest() {
   const [competitive, setCompetitive] = useState<boolean>(false);
 
   // Words & Text State
-  const [words, setWords] = useState<string[]>([]);
+  const [words, setWords] = useState<string[]>(() => COMMON_WORDS.slice(0, 70));
   const fullText = useMemo(() => words.join(' '), [words]);
 
   // Typing Input State
   const [input, setInput] = useState<string>('');
   const [isStarted, setIsStarted] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
 
   // Timer & Metrics State
   const [timeLeft, setTimeLeft] = useState<number>(60);
@@ -70,6 +72,7 @@ export function TypingTest() {
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
+  const keydownSoundPlayedRef = useRef<boolean>(false);
 
   // High-Precision Benchmark & Hardware Physics References (performance.now())
   const startTimeRef = useRef<number | null>(null);
@@ -281,6 +284,9 @@ export function TypingTest() {
 
     setResults(testResults);
 
+    // Save benchmark session to user's private local account (Zero Signup)
+    saveTestToProfile(testResults);
+
     // Trigger celebration confetti if good score
     if (finalNetWpm > 25) {
       confetti({
@@ -295,7 +301,19 @@ export function TypingTest() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isFinished) return;
 
-    const val = e.target.value;
+    let val = e.target.value;
+
+    // Mobile keyboard normalization: undo auto-inserted period on double space
+    if (val.endsWith('. ') && !fullText.slice(0, val.length).endsWith('. ')) {
+      val = val.slice(0, -2) + '  ';
+    }
+
+    // Mobile auto-capitalization normalization for easy mode
+    if (val.length === 1 && difficulty === 'easy' && fullText.length > 0) {
+      if (val[0].toLowerCase() === fullText[0].toLowerCase()) {
+        val = val.toLowerCase();
+      }
+    }
 
     // Start timer on first keystroke
     if (!isStarted && val.length > 0) {
@@ -357,6 +375,32 @@ export function TypingTest() {
       }
     }
 
+    // Fallback switch audio for mobile virtual keyboards where keydown doesn't pass standard key codes
+    if (!keydownSoundPlayedRef.current) {
+      if (val.length > input.length) {
+        const lastChar = val[val.length - 1];
+        let soundCode = 'KeyF';
+        if (lastChar === ' ') {
+          soundCode = 'Space';
+        } else if (lastChar >= '0' && lastChar <= '9') {
+          soundCode = `Digit${lastChar}`;
+        } else if (lastChar.toLowerCase() >= 'a' && lastChar.toLowerCase() <= 'z') {
+          soundCode = `Key${lastChar.toUpperCase()}`;
+        }
+        playKey(soundCode);
+      } else if (val.length < input.length) {
+        playKey('Backspace');
+        backspaceCountRef.current++;
+        if (input.length > 0) {
+          const lastCharIndex = input.length - 1;
+          if (input[lastCharIndex] !== fullText[lastCharIndex]) {
+            correctedErrorsRef.current++;
+          }
+        }
+      }
+    }
+    keydownSoundPlayedRef.current = false;
+
     setInput(val);
     const currentExactElapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
     calculateLiveStats(val, currentExactElapsed);
@@ -403,13 +447,20 @@ export function TypingTest() {
     }
 
     // Play switch bottom-out sound on keydown
-    pressedKeysRef.current.add(e.code);
-    playKey(e.code);
+    if (e.code && e.code !== 'Unidentified') {
+      pressedKeysRef.current.add(e.code);
+      playKey(e.code);
+      keydownSoundPlayedRef.current = true;
+    } else {
+      keydownSoundPlayedRef.current = false;
+    }
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    pressedKeysRef.current.delete(e.code);
-    releaseKey(e.code);
+    if (e.code && e.code !== 'Unidentified') {
+      pressedKeysRef.current.delete(e.code);
+      releaseKey(e.code);
+    }
   };
 
   // Global Keyboard Shortcuts (Tab+Enter: Restart, Alt+F: Focus Mode, Esc: Reset / Finish Unlimited, Alt+1-8: Switch sound)
@@ -512,10 +563,10 @@ Benchmark verified: ${window.location.origin}`;
   const currentProfile = SWITCH_PROFILES[activePack];
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+    <div className="w-full max-w-4xl mx-auto flex flex-col items-center overflow-x-hidden px-1 sm:px-0">
       
       {/* Test Config Toolbar (Mode, Time / Words, Sound Switcher & Focus Mode CTA) */}
-      <div className="w-full flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3 mb-6 sm:mb-8 bg-zinc-900/60 p-2 sm:p-2.5 rounded-2xl border border-zinc-800/80 backdrop-blur-sm">
+      <div className="w-full max-w-full flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3 mb-6 sm:mb-8 bg-zinc-900/60 p-2 sm:p-2.5 rounded-2xl border border-zinc-800/80 backdrop-blur-sm">
         
         {/* Left Section: Mode Selector + Sub-options */}
         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
@@ -705,7 +756,14 @@ Benchmark verified: ${window.location.origin}`;
           onClick={() => inputRef.current?.focus()}
           className="relative w-full cursor-text rounded-2xl sm:rounded-3xl bg-zinc-900/40 border border-zinc-800/80 p-4 xs:p-6 sm:p-10 shadow-2xl transition-all hover:border-zinc-700/80"
         >
-          {/* Hidden real input that captures keystrokes */}
+          {/* Mobile Tap-To-Focus Indicator */}
+          {!isStarted && !isInputFocused && (
+            <div className="sm:hidden absolute top-3 right-3 z-20 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-[11px] font-mono text-amber-300 animate-pulse shadow-sm">
+              <span>Tap to type</span>
+            </div>
+          )}
+
+          {/* Real input that captures keystrokes on mobile virtual keyboard & desktop */}
           <input
             ref={inputRef}
             type="text"
@@ -713,19 +771,24 @@ Benchmark verified: ${window.location.origin}`;
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onKeyUp={handleKeyUp}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
             autoFocus
             autoCapitalize="none"
             autoComplete="off"
             autoCorrect="off"
-            spellCheck="false"
-            className="absolute inset-0 opacity-0 cursor-default"
+            spellCheck={false}
+            inputMode="text"
+            enterKeyHint="done"
+            className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-text select-none text-base"
+            style={{ fontSize: '16px' }}
             aria-label="Typing test input field"
           />
 
           {/* Rendered Text with Caret and Character States */}
           <div
             ref={textContainerRef}
-            className="h-32 xs:h-36 sm:h-44 overflow-hidden font-mono text-lg xs:text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 transition-all"
+            className="h-32 xs:h-36 sm:h-44 overflow-hidden font-mono text-lg xs:text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 transition-all pointer-events-none relative z-0"
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
@@ -745,12 +808,12 @@ Benchmark verified: ${window.location.origin}`;
                 <span
                   key={index}
                   ref={isCurrent ? activeCharRef : null}
-                  className={`relative ${charClass} transition-colors duration-75`}
+                  className={`relative ${charClass}`}
                 >
                   {/* Smooth Caret Cursor on Active Letter */}
                   {isCurrent && (
                     <span
-                      className="absolute -left-[1px] top-1 bottom-1 w-[2.5px] rounded-full animate-pulse bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                      className="absolute -left-[1px] top-1 bottom-1 w-[2.5px] rounded-full animate-pulse bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.8)] will-change-transform"
                     />
                   )}
                   {char}
@@ -836,7 +899,7 @@ Benchmark verified: ${window.location.origin}`;
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-zinc-800/80">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
                   Performance Diagnostics Verified
                 </span>
@@ -1155,6 +1218,14 @@ Benchmark verified: ${window.location.origin}`;
                 <Maximize2 className="w-4 h-4 text-amber-400" />
                 <span>Focus Mode</span>
               </a>
+
+              <Link
+                href="/profile"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 shadow-sm transition-all"
+              >
+                <TrendingUp className="w-4 h-4 text-amber-400" />
+                <span>Profile & Growth →</span>
+              </Link>
 
               <Link
                 href="/sounds"

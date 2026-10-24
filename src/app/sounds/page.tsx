@@ -52,7 +52,7 @@ export default function SoundLabPage() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col items-center">
+    <div className="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col items-center overflow-x-hidden">
       
       {/* Studio Header */}
       <div className="text-center max-w-2xl mx-auto mb-8">

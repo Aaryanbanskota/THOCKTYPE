@@ -23,7 +23,16 @@ import {
   Cpu,
   Target,
   FileText,
-  Play
+  Play,
+  Trophy,
+  Award,
+  HelpCircle,
+  ChevronDown,
+  CheckCircle2,
+  Crown,
+  Star,
+  Database,
+  Calendar
 } from 'lucide-react';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES, PACK_IDS } from '@/lib/sound-profiles';
@@ -32,6 +41,7 @@ import { SwitchIcon } from '@/components/SwitchIcon';
 export default function LearnMorePage() {
   const { activePack, setActivePack, playKey } = useSound();
   const [lastKeyPressed, setLastKeyPressed] = useState<string>('Press any key or shortcut...');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // Live keystroke sniffer
   useEffect(() => {
@@ -79,8 +89,20 @@ export default function LearnMorePage() {
           <a href="#typing-benchmark" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-amber-400 hover:border-zinc-700 transition-colors">
             #typing-benchmark
           </a>
-          <a href="#shortcuts-deck" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-emerald-400 hover:border-zinc-700 transition-colors">
+          <a href="#milestone-badges" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-amber-300 hover:border-zinc-700 transition-colors">
+            #milestone-badges
+          </a>
+          <a href="#rank-rings" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-purple-400 hover:border-zinc-700 transition-colors">
+            #rank-rings
+          </a>
+          <a href="#local-privacy" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-emerald-400 hover:border-zinc-700 transition-colors">
+            #local-privacy
+          </a>
+          <a href="#shortcuts-deck" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 transition-colors">
             #shortcuts-deck
+          </a>
+          <a href="#faq" className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-rose-400 hover:border-zinc-700 transition-colors">
+            #faq
           </a>
         </div>
       </div>
@@ -452,6 +474,268 @@ export default function LearnMorePage() {
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* 5. Milestone Badges & Accolades System */}
+      <section id="milestone-badges" className="w-full mb-16 scroll-mt-20">
+        <div className="flex items-center gap-2 mb-2">
+          <Award className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-100">
+            Milestone Badges & Honors
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-zinc-400 mb-6 max-w-3xl leading-relaxed">
+          Unlock 24 distinct GitHub-style accolades as your typing velocity, streak regularity, accuracy discipline, and acoustic switch mastery grow. Each badge possesses unique unlock criteria evaluated dynamically in real time.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
+          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-emerald-500/30 flex flex-col items-center text-center">
+            <span className="text-[10px] font-mono uppercase font-bold text-emerald-400 mb-1">Starter Tier</span>
+            <span className="text-xs text-zinc-500">★☆☆☆☆</span>
+            <p className="text-xs text-zinc-300 font-semibold mt-2">First Keystrokes</p>
+            <p className="text-[11px] text-zinc-400 mt-1">First test, first switch sound preview, 95% accuracy baseline.</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-amber-700/40 flex flex-col items-center text-center">
+            <span className="text-[10px] font-mono uppercase font-bold text-amber-500 mb-1">Bronze Tier</span>
+            <span className="text-xs text-zinc-500">★★☆☆☆</span>
+            <p className="text-xs text-zinc-300 font-semibold mt-2">Velocity Rhythms</p>
+            <p className="text-[11px] text-zinc-400 mt-1">45 WPM velocity, 3-day typing streaks, 3 switch sound packs tested.</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-400/40 flex flex-col items-center text-center">
+            <span className="text-[10px] font-mono uppercase font-bold text-zinc-300 mb-1">Silver Tier</span>
+            <span className="text-xs text-zinc-500">★★★☆☆</span>
+            <p className="text-xs text-zinc-300 font-semibold mt-2">Disciplined Striker</p>
+            <p className="text-[11px] text-zinc-400 mt-1">65 WPM speed, 98% surgical precision, 5 distinct acoustic switch packs.</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-amber-400/40 flex flex-col items-center text-center">
+            <span className="text-[10px] font-mono uppercase font-bold text-amber-300 mb-1">Gold Tier</span>
+            <span className="text-xs text-zinc-500">★★★★☆</span>
+            <p className="text-xs text-zinc-300 font-semibold mt-2">Speed Specialist</p>
+            <p className="text-[11px] text-zinc-400 mt-1">80 WPM threshold, 100% flawless tests, 50 lifetime typing benchmarks.</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-cyan-400/40 flex flex-col items-center text-center">
+            <span className="text-[10px] font-mono uppercase font-bold text-cyan-300 mb-1">Diamond Tier</span>
+            <span className="text-xs text-zinc-500">★★★★★</span>
+            <p className="text-xs text-zinc-300 font-semibold mt-2">Acoustic Legend</p>
+            <p className="text-[11px] text-zinc-400 mt-1">100+ WPM velocity, 100 completed sessions, 14-day practice dedication.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 text-xs font-mono gap-3">
+          <span className="text-zinc-400 text-center sm:text-left">Want to inspect all 24 achievements, your progress, and locked requirements?</span>
+          <Link
+            href="/badges"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold transition-all flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <span>Explore Badges Showcase</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* 6. Dynamic Rank Rings */}
+      <section id="rank-rings" className="w-full mb-16 scroll-mt-20">
+        <div className="flex items-center gap-2 mb-2">
+          <Crown className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-100">
+            Profile Rank Ring Evolution
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-zinc-400 mb-6 max-w-3xl leading-relaxed">
+          Your profile avatar features an authentic metallic halo ring and ambient backlight glow that dynamically levels up as your peak WPM records advance across competitive benchmarks.
+        </p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-emerald-500 ring-2 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-emerald-400">0+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Starter</div>
+            <span className="text-[10px] font-mono text-emerald-400">&lt; 45 WPM</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-amber-700 ring-2 ring-amber-700/40 shadow-[0_0_12px_rgba(180,83,9,0.3)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-amber-500">45+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Bronze</div>
+            <span className="text-[10px] font-mono text-amber-500">45 - 64 WPM</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-zinc-300 ring-2 ring-zinc-300/40 shadow-[0_0_12px_rgba(212,212,216,0.3)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-zinc-300">65+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Silver</div>
+            <span className="text-[10px] font-mono text-zinc-300">65 - 79 WPM</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-amber-400 ring-2 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.4)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-amber-400">80+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Gold</div>
+            <span className="text-[10px] font-mono text-amber-400">80 - 99 WPM</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-cyan-400 ring-2 ring-cyan-400/40 shadow-[0_0_15px_rgba(34,211,238,0.4)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-cyan-300">100+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Diamond</div>
+            <span className="text-[10px] font-mono text-cyan-300">100 - 119 WPM</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-purple-500 ring-2 ring-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.4)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-purple-300">120+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Master</div>
+            <span className="text-[10px] font-mono text-purple-300">120 - 139 WPM</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-rose-500 ring-2 ring-rose-500/50 shadow-[0_0_18px_rgba(244,63,94,0.5)] bg-zinc-950 flex items-center justify-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-rose-400">140+</span>
+            </div>
+            <div className="text-xs font-bold text-zinc-200">Grandmaster</div>
+            <span className="text-[10px] font-mono text-rose-400">140+ WPM</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Zero-Signup Local Storage & 52-Week Heatmap */}
+      <section id="local-privacy" className="w-full mb-16 scroll-mt-20">
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-100">
+            100% Offline Local Storage & Activity Heatmap
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-zinc-400 mb-6 max-w-3xl leading-relaxed">
+          THOCKTYPE believes typing practice data belongs exclusively to you. No cloud account required, no passwords to memorize, and zero user analytics tracking.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col justify-between">
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3">
+                <Database className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-zinc-100">Zero Signup or Passwords</h3>
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                Your profile is initialized automatically on your first visit. All benchmark scores, WPM logs, consistency ratings, and switch preferences reside solely in your browser&apos;s local storage.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800 text-[11px] font-mono text-emerald-400">
+              100% Private & Anonymous
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col justify-between">
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-3">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-zinc-100">52-Week GitHub Activity Graph</h3>
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                Track every day of practice across 365 days. The contribution heatmap visually reflects your daily session volume, test consistency, and current practice streaks right on your profile.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800 text-[11px] font-mono text-amber-400">
+              Daily Streak & Cadence Tracking
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col justify-between">
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 mb-3">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-zinc-100">One-Click JSON Export & Import</h3>
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                Never lose your hard-earned achievements. Download a timestamped JSON backup anytime with a single click, or restore your complete typing history when switching devices.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800 text-[11px] font-mono text-sky-400">
+              Complete Data Portability
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Frequently Asked Questions (FAQ) */}
+      <section id="faq" className="w-full mb-16 scroll-mt-20">
+        <div className="flex items-center gap-2 mb-2">
+          <HelpCircle className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-100">
+            Frequently Asked Questions (FAQ)
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-zinc-400 mb-6 max-w-3xl leading-relaxed">
+          Everything you need to know about typing benchmarks, acoustics synthesis, rank colors, and mobile typing.
+        </p>
+
+        <div className="space-y-3">
+          {[
+            {
+              q: "How does the mechanical switch audio system work?",
+              a: "THOCKTYPE uses the Web Audio API to synthesize high-definition multi-sampled mechanical clicks, clacks, and thocks. Every key press triggers realistic pitch micro-variation and deskmat resonance simulation so rapid bursts sound authentic, rhythmic, and natural without repetitive phase distortion."
+            },
+            {
+              q: "What is the difference between Net WPM and Raw WPM?",
+              a: "Raw WPM measures your gross typing speed based on total characters typed divided by 5 per minute, regardless of typos. Net WPM (the official benchmark score) strictly penalizes uncorrected errors, showing your true usable keystroke output speed."
+            },
+            {
+              q: "Can I practice and test my typing speed on mobile phones or tablets?",
+              a: "Yes! THOCKTYPE is fully responsive and optimized for mobile devices. On mobile screens, tapping into the test area activates your device's native touch keyboard or displays our interactive virtual keyboard, complete with audio playback for every tap."
+            },
+            {
+              q: "How do I level up my Profile Rank Ring color?",
+              a: "Your rank ring evolves automatically based on your highest recorded WPM benchmark. Reach 45 WPM for Bronze, 65 WPM for Silver, 80 WPM for Gold, 100 WPM for Diamond, 120 WPM for Master, and 140+ WPM to achieve the prestigious Crimson Grandmaster Elite halo."
+            },
+            {
+              q: "Is my personal data or typing text stored on an external cloud server?",
+              a: "Never. All benchmarks, accuracy percentages, trouble keys, and custom profile settings are stored strictly in your browser's private local storage. No data is transmitted to third-party databases, and no login credentials or cookies are required."
+            },
+            {
+              q: "How do I transfer my typing benchmarks and badges to another browser?",
+              a: "Navigate to your Profile (/profile) and click the 'Export JSON' button. This generates a clean backup file of your entire session archive. On your new device, simply click 'Import JSON' and select that file to restore all your history, badges, and heatmap data instantly."
+            }
+          ].map((item, idx) => {
+            const isOpen = openFaq === idx;
+            return (
+              <div
+                key={idx}
+                className="rounded-2xl bg-zinc-900/60 border border-zinc-800 transition-colors overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(isOpen ? null : idx)}
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                >
+                  <span className="text-sm sm:text-base font-semibold text-zinc-100 font-sans">
+                    {item.q}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0 ${
+                      isOpen ? 'rotate-180 text-amber-400' : ''
+                    }`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-zinc-400 leading-relaxed border-t border-zinc-800/60 pt-3">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 

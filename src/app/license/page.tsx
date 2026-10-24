@@ -36,7 +36,7 @@ export default function LicensePage() {
           
           <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950 border border-zinc-800/80 font-mono text-xs text-zinc-400 leading-relaxed space-y-4">
             <p className="text-zinc-300">
-              Copyright (c) 2026 THOCKTYPE Contributors
+              Copyright (c) 2026 Aaryan
             </p>
             <p>
               Permission is hereby granted, free of charge, to any person obtaining a copy

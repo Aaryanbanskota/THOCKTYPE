@@ -44,25 +44,27 @@ export default function HomePage() {
   const currentProfile = SWITCH_PROFILES[activePack];
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full max-w-full flex flex-col items-center overflow-x-hidden">
       
       {/* 1. Tactical Industrial Masthead & Live Workbench */}
       <section className="relative w-full pt-6 sm:pt-10 pb-8 sm:pb-12 px-3 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
         
         {/* Terminal Header Info */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3 sm:mb-4">
-          <span className="flex items-center gap-1.5 text-amber-400 font-bold">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 text-[11px] sm:text-xs font-mono mb-4 px-1">
+          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 font-bold shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             TYPELOUDER // THOCKTYPE
           </span>
-          <span className="hidden xs:inline">•</span>
-          <span>Open Acoustic Lab</span>
-          <span className="hidden xs:inline">•</span>
-          <span className="text-zinc-400">Zero Signup</span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 shadow-sm">
+            Open Acoustic Lab
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold shadow-sm">
+            Zero Signup
+          </span>
         </div>
 
         {/* Main Headline */}
-        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight max-w-2xl leading-[1.18] sm:leading-[1.15]">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight max-w-2xl leading-snug sm:leading-tight px-1">
           Mechanical switch sound test & typing speed lab.
         </h1>
 
