@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSound } from '@/context/sound-context';
 import { SWITCH_PROFILES } from '@/lib/sound-profiles';
+import { SwitchIcon } from '@/components/SwitchIcon';
 
 interface KeyDef {
   code: string;
@@ -245,13 +246,14 @@ function VirtualKeyboardComponent({ interactiveGlobal = true }: VirtualKeyboardP
         {/* Tactile Chassis Brand & Plate Badge */}
         <div className="mt-2.5 sm:mt-3 flex items-center justify-between px-2 text-[10px] text-neutral-500 font-mono">
           <div className="flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full inline-block animate-pulse shrink-0"
-              style={{ backgroundColor: profile?.color }}
+            <SwitchIcon
+              id={activePack}
+              className="w-3.5 h-3.5 shrink-0"
+              style={{ color: profile?.color }}
             />
             <span className="truncate text-neutral-400">ACOUSTIC PROFILE: <strong className="text-neutral-200">{profile?.name.toUpperCase()}</strong></span>
           </div>
-          <span className="hidden sm:inline text-neutral-500">65% COMPACT • TACTILE MECHANICAL KEYCAPS</span>
+          <span className="hidden sm:inline text-neutral-500">65% COMPACT / TACTILE MECHANICAL KEYCAPS</span>
         </div>
 
       </div>

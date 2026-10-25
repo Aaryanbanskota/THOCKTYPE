@@ -53,6 +53,62 @@ export default function ShortcutsClient() {
 
   const testControls: ShortcutItem[] = [
     {
+      keys: ['Alt', 'S'],
+      action: 'Cycle Test Duration',
+      description: 'Quickly cycles duration through 15s → 30s → 60s → 90s instantly in time mode.',
+      scope: 'Typing Test',
+      tag: 'New'
+    },
+    {
+      keys: ['Alt', 'T'],
+      action: 'Switch to Time Mode',
+      description: 'Sets typing benchmark to timed duration test with instant timer restart.',
+      scope: 'Typing Test'
+    },
+    {
+      keys: ['Alt', 'W'],
+      action: 'Switch to Word Target',
+      description: 'Sets typing benchmark to word count target mode (25w / 50w / 100w).',
+      scope: 'Typing Test'
+    },
+    {
+      keys: ['Alt', 'U'],
+      action: 'Switch to Unlimited Mode',
+      description: 'Sets continuous distraction-free endless typing stream.',
+      scope: 'Typing Test'
+    },
+    {
+      keys: ['Alt', 'C'],
+      action: 'Custom Passage Mode',
+      description: 'Opens custom text modal to paste custom passages or select curated presets.',
+      scope: 'Typing Test'
+    },
+    {
+      keys: ['Alt', 'F'],
+      action: 'Open Zen Focus Mode',
+      description: 'Launches full-screen distraction-free typing in a new tab, preserving your active duration and switch settings.',
+      scope: 'Global',
+      tag: 'Popular'
+    },
+    {
+      keys: ['Alt', 'E'],
+      action: 'Easy Difficulty',
+      description: 'Clean lowercase prose vocabulary without numbers or complex punctuation.',
+      scope: 'Typing Test'
+    },
+    {
+      keys: ['Alt', 'M'],
+      action: 'Medium Difficulty',
+      description: 'Standard punctuated sentences with commas, apostrophes, and capital letters.',
+      scope: 'Typing Test'
+    },
+    {
+      keys: ['Alt', 'H'],
+      action: 'Hard Difficulty',
+      description: 'Advanced typing with numbers, symbols, camelCase, and technical code tokens.',
+      scope: 'Typing Test'
+    },
+    {
       keys: ['Tab', 'Enter'],
       action: 'Instant Test Restart',
       description: 'Restarts the current benchmark instantly without moving your hands from home row.',
@@ -66,48 +122,35 @@ export default function ShortcutsClient() {
       scope: 'Typing Test'
     },
     {
-      keys: ['Alt', 'F'],
-      action: 'Toggle Zen Focus Mode',
-      description: 'Switches directly into full-screen, minimalist, distraction-free typing.',
-      scope: 'Global',
-      tag: 'Popular'
-    },
-    {
       keys: ['Esc'],
       action: 'Finish Unlimited / Exit Focus',
       description: 'Ends an ongoing unlimited typing session to generate the performance scorecard, or returns from Zen mode.',
       scope: 'Typing Test'
-    },
-    {
-      keys: ['Alt', 'M'],
-      action: 'Cycle Difficulty Mode',
-      description: 'Cycles test text between Easy (clean lowercase words), Medium (punctuated prose), and Hard (numbers, symbols, and camelCase).',
-      scope: 'Global'
     }
   ];
 
   const navigationControls: ShortcutItem[] = [
     {
       keys: ['Alt', 'T'],
-      action: 'Navigate to Typing Test',
+      action: 'Jump to Typing Test',
       description: 'Directly jumps to the standard typing benchmark page from anywhere.',
       scope: 'Global'
     },
     {
-      keys: ['Alt', 'S'],
-      action: 'Navigate to Sound Studio',
+      keys: ['Alt', 'L'],
+      action: 'Navigate to Sound Lab',
       description: 'Opens the 8-switch acoustic laboratory and audio mixer.',
       scope: 'Global'
     },
     {
-      keys: ['Alt', 'H'],
+      keys: ['Alt', '0'],
       action: 'Return Home',
       description: 'Navigates back to the landing page and virtual 65% keyboard.',
       scope: 'Global'
     },
     {
       keys: ['?'],
-      action: 'Toggle Shortcut HUD Overlay',
+      action: 'Toggle Shortcut Reference',
       description: 'Brings up a lightweight quick-glance cheat sheet overlay anywhere in the app.',
       scope: 'Global',
       tag: 'Cheat Sheet'
@@ -115,6 +158,13 @@ export default function ShortcutsClient() {
   ];
 
   const audioControls: ShortcutItem[] = [
+    {
+      keys: ['Alt', 'X'],
+      action: 'Toggle Mute / Unmute',
+      description: 'Instantly silences or restores mechanical switch playback.',
+      scope: 'Audio Engine',
+      tag: 'Audio'
+    },
     {
       keys: ['Alt', '↑'],
       action: 'Volume Up (+10%)',
@@ -125,12 +175,6 @@ export default function ShortcutsClient() {
       keys: ['Alt', '↓'],
       action: 'Volume Down (-10%)',
       description: 'Lowers the master Web Audio acoustic volume by 10%.',
-      scope: 'Audio Engine'
-    },
-    {
-      keys: ['Alt', 'M'],
-      action: 'Mute / Unmute',
-      description: 'Toggles silent mode if audio is muted or unmuted.',
       scope: 'Audio Engine'
     },
     {
@@ -180,7 +224,7 @@ export default function ShortcutsClient() {
       <div className="w-full mb-10">
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-zinc-800/80">
           <div className="flex items-center gap-2 text-sm font-bold text-zinc-200">
-            <Sparkles className="w-4 h-4 text-amber-400" />
+            <Radio className="w-4 h-4 text-amber-400" />
             <span>Switch Hot-Swap Shortcuts</span>
           </div>
           <span className="text-xs font-mono text-zinc-400">

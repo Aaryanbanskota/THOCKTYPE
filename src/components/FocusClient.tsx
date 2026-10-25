@@ -25,7 +25,7 @@ import {
   FileText,
   Infinity as InfinityIcon,
   X,
-  Sparkles
+  Keyboard
 } from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
@@ -34,7 +34,7 @@ type FocusModeType = 'time' | 'words' | 'unlimited';
 
 function FocusModeContent() {
   const searchParams = useSearchParams();
-  const { activePack, setActivePack, playKey, releaseKey, isMuted, toggleMute, volume } = useSound();
+  const { activePack, setActivePack, playKey, releaseKey, isMuted, toggleMute, volume, setVolume } = useSound();
 
   // Settings from query params or defaults
   const paramDuration = searchParams.get('duration');
@@ -46,6 +46,10 @@ function FocusModeContent() {
 
   // Setup modal state for users visiting /focus directly
   const [isConfigured, setIsConfigured] = useState<boolean>(hasDirectParams);
+
+  // Audition input and key status on setup modal
+  const [auditionText, setAuditionText] = useState<string>('');
+  const [lastAuditionKey, setLastAuditionKey] = useState<string>('');
 
   // Focus mode configuration state
   const [selectedMode, setSelectedMode] = useState<FocusModeType>(
@@ -300,25 +304,39 @@ function FocusModeContent() {
     }
   };
 
-  // Global key bindings (Tab + Enter, Esc, Enter to start setup)
+  // Audition 85 WPM cadence sample
+  const playCadencePreview = () => {
+    const sequence: { key: string; delay: number }[] = [
+      { key: 'KeyT', delay: 0 },
+      { key: 'KeyH', delay: 110 },
+      { key: 'KeyO', delay: 230 },
+      { key: 'KeyC', delay: 350 },
+      { key: 'KeyK', delay: 460 },
+      { key: 'Space', delay: 580 },
+      { key: 'KeyF', delay: 720 },
+      { key: 'KeyA', delay: 840 },
+      { key: 'KeyS', delay: 960 },
+      { key: 'KeyT', delay: 1080 }
+    ];
+    sequence.forEach(({ key, delay }) => {
+      setTimeout(() => {
+        playKey(key, activePack);
+        setLastAuditionKey(key.replace('Key', ''));
+      }, delay);
+    });
+  };
+
+  // Keyboard Shortcuts (Alt+S cycle time, Alt+T time, Alt+W words, Alt+U unlimited, Alt+E/M/H diff, Alt+1-8 switches, Tab+Enter, Esc)
   useEffect(() => {
     let tabDown = false;
     const onKey = (e: KeyboardEvent) => {
-      if (!isConfigured) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          setIsConfigured(true);
-        }
-        return;
-      }
-
-      if (e.key === 'Tab') tabDown = true;
-      if (e.key === 'Enter' && (tabDown || isFinished)) {
-        e.preventDefault();
-        resetTest();
-      }
+      // 1. Esc: Exit session or back to /test
       if (e.key === 'Escape') {
         e.preventDefault();
+        if (!isConfigured) {
+          window.location.href = '/test';
+          return;
+        }
         if (isStarted && !isFinished && input.length > 5) {
           const exactElapsed = startTimeRef.current
             ? (performance.now() - startTimeRef.current) / 1000
@@ -327,6 +345,133 @@ function FocusModeContent() {
         } else {
           resetTest();
         }
+        return;
+      }
+
+      // 2. Alt + S: Cycle Duration (15s -> 30s -> 60s -> 90s)
+      if (e.altKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        const DURATIONS = [15, 30, 60, 90];
+        const nextIdx = (DURATIONS.indexOf(selectedDuration) + 1) % DURATIONS.length;
+        const nextDur = DURATIONS[nextIdx !== -1 ? nextIdx : 0];
+        setSelectedDuration(nextDur);
+        setSelectedMode('time');
+        if (isConfigured) {
+          setTimeLeft(nextDur);
+          resetTest();
+        }
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: `Duration: ${nextDur}s`, subtext: 'Alt + S / Quick Cycle' }
+        }));
+        return;
+      }
+
+      // 3. Alt + T: Switch to Time Mode
+      if (e.altKey && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        setSelectedMode('time');
+        if (isConfigured) {
+          setTimeLeft(selectedDuration);
+          resetTest();
+        }
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: `Mode: Time (${selectedDuration}s)`, subtext: 'Alt + T' }
+        }));
+        return;
+      }
+
+      // 4. Alt + W: Switch to Words Mode
+      if (e.altKey && (e.key === 'w' || e.key === 'W')) {
+        e.preventDefault();
+        setSelectedMode('words');
+        if (isConfigured) {
+          setTimeLeft(0);
+          resetTest();
+        }
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: `Mode: Word Target (${selectedWords}w)`, subtext: 'Alt + W' }
+        }));
+        return;
+      }
+
+      // 5. Alt + U: Switch to Unlimited Mode
+      if (e.altKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        setSelectedMode('unlimited');
+        if (isConfigured) {
+          setTimeLeft(0);
+          resetTest();
+        }
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Mode: Endless Stream', subtext: 'Alt + U' }
+        }));
+        return;
+      }
+
+      // 6. Alt + E: Easy Difficulty
+      if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        setDifficulty('easy');
+        if (isConfigured) resetTest();
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Difficulty: Easy', subtext: 'Alt + E / Clean lowercase' }
+        }));
+        return;
+      }
+
+      // 7. Alt + M: Medium Difficulty
+      if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+        e.preventDefault();
+        setDifficulty('medium');
+        if (isConfigured) resetTest();
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Difficulty: Medium', subtext: 'Alt + M / Punctuated prose' }
+        }));
+        return;
+      }
+
+      // 8. Alt + H: Hard Difficulty
+      if (e.altKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        setDifficulty('hard');
+        if (isConfigured) resetTest();
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Difficulty: Hard', subtext: 'Alt + H / Numbers & symbols' }
+        }));
+        return;
+      }
+
+      // 9. Alt + 1-8: Switch sound pack
+      if (e.altKey && e.key >= '1' && e.key <= '8') {
+        const index = parseInt(e.key, 10) - 1;
+        const targetPack = PACK_IDS[index];
+        if (targetPack) {
+          e.preventDefault();
+          setActivePack(targetPack);
+          playKey('KeyF', targetPack);
+          const p = SWITCH_PROFILES[targetPack];
+          window.dispatchEvent(new CustomEvent('thocktype:hud', {
+            detail: { message: `Switched to ${p.name}`, subtext: `Alt + ${index + 1} / ${p.category}`, packId: targetPack }
+          }));
+          return;
+        }
+      }
+
+      // 10. Enter to start when not configured
+      if (!isConfigured) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          setIsConfigured(true);
+          setTimeout(() => inputRef.current?.focus(), 50);
+        }
+        return;
+      }
+
+      // 11. Tab + Enter to restart during test
+      if (e.key === 'Tab') tabDown = true;
+      if (e.key === 'Enter' && (tabDown || isFinished)) {
+        e.preventDefault();
+        resetTest();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -345,7 +490,7 @@ function FocusModeContent() {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('thocktype:restart-test', onRestartEvent);
     };
-  }, [resetTest, isConfigured, isUnlimited, isStarted, isFinished, input, timeLeft, selectedDuration, finishTest]);
+  }, [resetTest, isConfigured, isUnlimited, isStarted, isFinished, input, timeLeft, selectedDuration, selectedWords, finishTest, playKey, activePack, setActivePack]);
 
   // Line-by-line auto-scroll: smoothly rolls up finished lines so upcoming text is always visible
   useEffect(() => {
@@ -384,43 +529,122 @@ function FocusModeContent() {
 
   /* =========================================================================
    * DIRECT VISIT SETUP CARD
-   * Rendered when a user navigates directly to /focus without URL params
+   * Hardware console rendered when navigating directly to /focus without URL params
    * ========================================================================= */
   if (!isConfigured) {
     return (
-      <div className="fixed inset-0 w-full h-[100dvh] bg-[#0c0d10] text-zinc-100 flex flex-col items-center justify-center p-3 xs:p-4 sm:p-6 select-none overflow-y-auto relative">
-        
-        {/* Subtle Ambient Radial Backlight */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="w-full max-w-xl p-5 xs:p-7 sm:p-8 rounded-3xl bg-[#141519]/95 border border-white/[0.08] shadow-[0_24px_64px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 my-auto relative z-10">
+      <div className="fixed inset-0 w-full h-[100dvh] bg-[#0c0d10] text-zinc-100 flex flex-col items-center justify-center p-3 xs:p-4 sm:p-6 select-none overflow-y-auto">
+        <div className="w-full max-w-2xl p-5 sm:p-7 rounded-2xl bg-[#131418] border border-zinc-800 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 my-auto">
           
           {/* Header */}
-          <div className="flex items-start justify-between pb-4 border-b border-white/[0.06]">
+          <div className="flex items-start justify-between pb-4 border-b border-zinc-800">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-semibold text-amber-300 tracking-wider uppercase mb-1.5">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>Zen Focus Session</span>
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-mono font-bold text-amber-400 tracking-wider uppercase mb-2">
+                <span>ZEN CONSOLE // PHYSICAL RIG</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                Configure Your Session
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Configure Focus Environment
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Full-screen typing flow with authentic mechanical switch audio.
+                Zero distractions. Authentic mechanical switch acoustics. Sub-millisecond tracking.
               </p>
             </div>
             
             <Link
               href="/test"
-              className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+              className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-zinc-800 transition-colors"
               title="Exit to standard typing test"
             >
               <X className="w-4 h-4" />
             </Link>
           </div>
 
+          {/* Live Feature 1: Interactive Keystroke Acoustic Audition Pad */}
+          <div className="mt-4 p-3 rounded-xl bg-zinc-950/80 border border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-1">
+              <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center shrink-0">
+                <Keyboard className="w-4 h-4 text-amber-400" />
+              </div>
+              <input
+                type="text"
+                value={auditionText}
+                onChange={(e) => setAuditionText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.code && e.code !== 'Unidentified') {
+                    playKey(e.code, activePack);
+                    setLastAuditionKey(e.key === ' ' ? 'SPACE' : e.key.toUpperCase());
+                  }
+                }}
+                placeholder="Tap keys here to audition switch acoustics..."
+                className="bg-transparent text-xs font-mono text-zinc-200 placeholder:text-zinc-500 outline-none w-full"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+              {lastAuditionKey ? (
+                <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-300">
+                  [{lastAuditionKey}]
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono text-zinc-600">
+                  LIVE AUDITION
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={playCadencePreview}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-mono border border-zinc-700/60 transition-colors cursor-pointer"
+                title="Play 85 WPM acoustic cadence sequence"
+              >
+                <Play className="w-3 h-3 text-amber-400 fill-amber-400" />
+                <span>Cadence (85 WPM)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Live Feature 2: Audio Volume & Master Mute Slider */}
+          <div className="mt-3 flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="p-1 rounded-md text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted || volume === 0 ? (
+                  <VolumeX className="w-4 h-4 text-rose-400" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-zinc-300" />
+                )}
+              </button>
+              <span className="text-zinc-400 text-[11px]">Audio Volume:</span>
+              <span className="text-zinc-200 font-bold">{isMuted ? 'Muted' : `${Math.round(volume * 100)}%`}</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setVolume(v);
+                  if (isMuted && v > 0) toggleMute();
+                }}
+                className="w-24 sm:w-32 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                aria-label="Master Volume"
+              />
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-500">
+                Alt + X / Mute
+              </kbd>
+            </div>
+          </div>
+
           {/* 1. Mode & Duration Selection */}
-          <div className="mt-5 space-y-2.5">
+          <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="uppercase tracking-wider text-neutral-400 font-medium">Session Goal</span>
               <span className="text-neutral-500 text-[11px]">
@@ -429,44 +653,47 @@ function FocusModeContent() {
             </div>
 
             {/* Mode Segmented Bar */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.06]">
+            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-950/60 border border-zinc-800">
               {(['time', 'words', 'unlimited'] as FocusModeType[]).map((m) => {
                 const isSelected = selectedMode === m;
+                const shortcut = m === 'time' ? 'Alt+T' : m === 'words' ? 'Alt+W' : 'Alt+U';
                 return (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setSelectedMode(m)}
-                    className={`py-2 px-3 rounded-xl text-xs font-medium capitalize flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-lg text-xs font-medium capitalize flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20'
-                        : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
+                        : 'text-neutral-400 hover:text-white hover:bg-zinc-800/50'
                     }`}
                   >
                     {m === 'time' && <Clock className={`w-3.5 h-3.5 ${isSelected ? 'text-zinc-950' : 'text-neutral-400'}`} />}
                     {m === 'words' && <FileText className={`w-3.5 h-3.5 ${isSelected ? 'text-zinc-950' : 'text-neutral-400'}`} />}
                     {m === 'unlimited' && <InfinityIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-zinc-950' : 'text-neutral-400'}`} />}
                     <span>{m === 'unlimited' ? 'Endless' : m}</span>
+                    <span className="text-[9px] font-mono opacity-60 ml-0.5">[{shortcut}]</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Presets Sub-Row */}
+            {/* Duration Presets */}
             {selectedMode === 'time' && (
               <div className="grid grid-cols-4 gap-1.5 pt-1">
-                {[15, 30, 60, 120].map((s) => (
+                {[15, 30, 60, 90].map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setSelectedDuration(s)}
-                    className={`py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer ${
+                    className={`py-1.5 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer flex items-center justify-center gap-1 ${
                       selectedDuration === s
-                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35 font-bold shadow-sm'
-                        : 'bg-black/30 text-neutral-400 hover:text-white border border-white/[0.04]'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
+                        : 'bg-zinc-950/40 text-neutral-400 hover:text-white border border-zinc-800'
                     }`}
                   >
-                    {s}s
+                    <span>{s}s</span>
+                    {s === 15 && <span className="text-[9px] text-zinc-500">[Alt+S]</span>}
                   </button>
                 ))}
               </div>
@@ -479,10 +706,10 @@ function FocusModeContent() {
                     key={w}
                     type="button"
                     onClick={() => setSelectedWords(w)}
-                    className={`py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer ${
+                    className={`py-1.5 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
                       selectedWords === w
-                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35 font-bold shadow-sm'
-                        : 'bg-black/30 text-neutral-400 hover:text-white border border-white/[0.04]'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
+                        : 'bg-zinc-950/40 text-neutral-400 hover:text-white border border-zinc-800'
                     }`}
                   >
                     {w}w
@@ -492,21 +719,22 @@ function FocusModeContent() {
             )}
 
             {selectedMode === 'unlimited' && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/[0.08] border border-amber-500/20 text-xs font-mono text-amber-300">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-800 text-xs font-mono text-amber-300">
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px] font-bold">STREAM</span>
                 <span>Continuous stream with no time limit. Finish whenever ready with Esc.</span>
               </div>
             )}
           </div>
 
           {/* 2. Difficulty Mode Selection */}
-          <div className="mt-5 space-y-2">
+          <div className="mt-4 space-y-2">
             <label className="text-xs font-mono uppercase tracking-wider text-neutral-400 font-medium block">
               Vocabulary & Punctuation
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => {
                 const isSelected = difficulty === d;
+                const shortcut = d === 'easy' ? 'Alt+E' : d === 'medium' ? 'Alt+M' : 'Alt+H';
                 return (
                   <button
                     key={d}
@@ -514,17 +742,20 @@ function FocusModeContent() {
                     onClick={() => setDifficulty(d)}
                     className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-white/[0.08] border-amber-500/60 shadow-sm ring-1 ring-amber-500/30'
-                        : 'bg-black/30 hover:bg-white/[0.03] border-white/[0.06] text-neutral-400 hover:text-white'
+                        ? 'bg-zinc-800/80 border-amber-500/60 shadow-sm ring-1 ring-amber-500/30'
+                        : 'bg-zinc-950/40 hover:bg-zinc-800/40 border-zinc-800 text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      {d === 'easy' && <SignalLow className="w-3.5 h-3.5 text-emerald-400" />}
-                      {d === 'medium' && <SignalMedium className="w-3.5 h-3.5 text-amber-400" />}
-                      {d === 'hard' && <SignalHigh className="w-3.5 h-3.5 text-rose-400" />}
-                      <span className={`text-xs font-semibold capitalize ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
-                        {d}
-                      </span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        {d === 'easy' && <SignalLow className="w-3.5 h-3.5 text-emerald-400" />}
+                        {d === 'medium' && <SignalMedium className="w-3.5 h-3.5 text-amber-400" />}
+                        {d === 'hard' && <SignalHigh className="w-3.5 h-3.5 text-rose-400" />}
+                        <span className={`text-xs font-semibold capitalize ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
+                          {d}
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono text-zinc-500">[{shortcut}]</span>
                     </div>
                     <span className="text-[10px] text-neutral-400 leading-tight">
                       {d === 'easy' ? 'Clean lowercase prose' : d === 'medium' ? 'Commas & punctuation' : 'Numbers & full symbol keys'}
@@ -536,18 +767,18 @@ function FocusModeContent() {
           </div>
 
           {/* 3. Switch Personality Selection */}
-          <div className="mt-5 space-y-2">
+          <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="uppercase tracking-wider text-neutral-400 font-medium">Mechanical Switch Audio</span>
               <span className="text-neutral-300 text-[11px] font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: SWITCH_PROFILES[activePack]?.color }} />
+                <SwitchIcon id={activePack} className="w-3.5 h-3.5 shrink-0" style={{ color: SWITCH_PROFILES[activePack]?.color }} />
                 <span>{SWITCH_PROFILES[activePack]?.name}</span>
-                <span className="text-neutral-500 font-normal">({SWITCH_PROFILES[activePack]?.category})</span>
+                <span className="text-neutral-500 font-normal">({SWITCH_PROFILES[activePack]?.category} / {SWITCH_PROFILES[activePack]?.pitch} Pitch)</span>
               </span>
             </div>
 
             <div className="grid grid-cols-4 gap-2">
-              {PACK_IDS.map((id) => {
+              {PACK_IDS.map((id, index) => {
                 const pack = SWITCH_PROFILES[id];
                 const isSelected = activePack === id;
                 return (
@@ -560,14 +791,18 @@ function FocusModeContent() {
                     }}
                     className={`flex flex-col items-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-white/[0.08] text-white shadow-md'
-                        : 'bg-black/30 hover:bg-white/[0.03] border-white/[0.06] text-neutral-400 hover:text-white'
+                        ? 'bg-zinc-800 text-white shadow-md'
+                        : 'bg-zinc-950/40 hover:bg-zinc-800/40 border-zinc-800 text-neutral-400 hover:text-white'
                     }`}
                     style={{
                       borderColor: isSelected ? pack.color : undefined,
                       boxShadow: isSelected ? `0 0 14px ${pack.color}25` : undefined
                     }}
                   >
+                    <div className="w-full flex items-center justify-between text-[9px] font-mono text-zinc-500 mb-1">
+                      <span>0{index + 1}</span>
+                      <span>Alt+{index + 1}</span>
+                    </div>
                     <SwitchIcon
                       id={id}
                       className="w-4 h-4 mb-1 shrink-0"
@@ -586,17 +821,17 @@ function FocusModeContent() {
           </div>
 
           {/* Launch Action Button */}
-          <div className="mt-6 pt-4 border-t border-white/[0.06]">
+          <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center gap-3">
             <button
               type="button"
               onClick={() => {
                 setIsConfigured(true);
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-400/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-400/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               <Flame className="w-4 h-4 fill-zinc-950" />
-              <span>Enter Zen Focus Mode</span>
+              <span>Start Focus Session (Enter ↵)</span>
             </button>
           </div>
 
@@ -619,7 +854,7 @@ function FocusModeContent() {
     >
       {/* Mobile Tap-To-Focus Indicator */}
       {!isStarted && !isInputFocused && !isFinished && (
-        <div className="sm:hidden absolute top-14 z-20 pointer-events-none flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-xs font-mono text-amber-300 animate-pulse shadow-md">
+        <div className="sm:hidden absolute top-14 z-20 pointer-events-none flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-xs font-mono text-amber-300 shadow-md">
           <span>Tap screen to open keyboard & type</span>
         </div>
       )}
@@ -677,7 +912,7 @@ function FocusModeContent() {
                   : (isUnlimited ? timeLeft : selectedDuration - timeLeft);
                 finishTest(inputRef.current?.value || input, Math.max(1, exactElapsed));
               }}
-              className="mt-1.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700 font-mono text-[11px] font-bold shadow-md transition-all active:scale-95 cursor-pointer pointer-events-auto"
+              className="mt-1.5 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700 font-mono text-[11px] font-bold shadow-md transition-all active:scale-95 cursor-pointer pointer-events-auto"
               title="Finish session and calculate score (or press Esc)"
             >
               <Square className="w-3 h-3 text-amber-400" />
@@ -803,7 +1038,7 @@ function FocusModeContent() {
           className="w-3.5 h-3.5 opacity-60"
           style={{ color: currentProfile?.color }}
         />
-        <span className="opacity-50">Tab + Enter to restart • {currentProfile?.name}</span>
+        <span className="opacity-50">Tab + Enter to restart / {currentProfile?.name}</span>
       </div>
 
     </div>

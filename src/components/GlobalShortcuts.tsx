@@ -13,12 +13,15 @@ import {
   VolumeX,
   Maximize2,
   RotateCcw,
-  Sparkles,
   Command,
   ArrowRight,
   Flame,
   Radio,
-  Home
+  Home,
+  Clock,
+  FileText,
+  Sliders,
+  Check
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -55,6 +58,18 @@ export function GlobalShortcuts() {
       setHud((current) => (current?.id === id ? null : current));
     }, 2200);
   }, []);
+
+  // Listen to custom HUD events dispatched by TypingTest or FocusClient
+  useEffect(() => {
+    const handleHUDEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ message: string; subtext?: string; packId?: SoundPackId }>;
+      if (custom.detail) {
+        showHUD(custom.detail.message, custom.detail.subtext, custom.detail.packId);
+      }
+    };
+    window.addEventListener('thocktype:hud', handleHUDEvent);
+    return () => window.removeEventListener('thocktype:hud', handleHUDEvent);
+  }, [showHUD]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,15 +111,108 @@ export function GlobalShortcuts() {
         }
       }
 
-      // 4. Alt + F: Open Zen Focus Mode (Works globally on any page!)
+      // 4. Alt + F: Open Zen Focus Mode (Works globally on any non-test page)
       if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+        if (!isTestRoute) {
+          e.preventDefault();
+          window.open(`/focus?pack=${activePack}`, '_blank');
+          showHUD('Opening Zen Focus Mode', 'Alt + F in new tab', activePack);
+          return;
+        }
+        // If on test route, local component handles Alt + F to preserve exact duration!
+      }
+
+      // 5. Alt + S: Cycle Duration (15s -> 30s -> 60s -> 90s)
+      if (e.altKey && (e.key === 's' || e.key === 'S')) {
+        if (isTestRoute) {
+          // Handled locally in TypingTest or FocusClient
+          return;
+        }
         e.preventDefault();
-        window.open(`/focus?pack=${activePack}`, '_blank');
-        showHUD('Opening Zen Focus Mode', 'Alt + F in new tab', activePack);
+        router.push('/test');
+        showHUD('Opening Test (Alt + S)', 'Cycle duration in typing test');
         return;
       }
 
-      // 5. Alt + 1..8: Hot-swap mechanical switches globally
+      // 6. Mode Shortcuts: Alt + T (Time), Alt + W (Words), Alt + U (Unlimited), Alt + C (Custom)
+      if (e.altKey && (e.key === 't' || e.key === 'T')) {
+        if (isTestRoute) {
+          window.dispatchEvent(new CustomEvent('thocktype:set-mode', { detail: { mode: 'time' } }));
+          return;
+        }
+        e.preventDefault();
+        router.push('/test');
+        showHUD('Mode: Time Test', 'Alt + T');
+        return;
+      }
+
+      if (e.altKey && (e.key === 'w' || e.key === 'W')) {
+        if (isTestRoute) {
+          window.dispatchEvent(new CustomEvent('thocktype:set-mode', { detail: { mode: 'words' } }));
+          return;
+        }
+        e.preventDefault();
+        router.push('/test');
+        showHUD('Mode: Word Target', 'Alt + W');
+        return;
+      }
+
+      if (e.altKey && (e.key === 'u' || e.key === 'U')) {
+        if (isTestRoute) {
+          window.dispatchEvent(new CustomEvent('thocktype:set-mode', { detail: { mode: 'unlimited' } }));
+          return;
+        }
+        e.preventDefault();
+        router.push('/unlimited');
+        showHUD('Mode: Unlimited Stream', 'Alt + U');
+        return;
+      }
+
+      if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        if (isTestRoute) {
+          window.dispatchEvent(new CustomEvent('thocktype:open-custom'));
+          return;
+        }
+        e.preventDefault();
+        router.push('/test');
+        showHUD('Mode: Custom Text', 'Alt + C');
+        return;
+      }
+
+      // 7. Difficulty Shortcuts: Alt + E (Easy), Alt + M (Medium), Alt + H (Hard)
+      if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('thocktype:set-difficulty', { detail: { difficulty: 'easy' } }));
+        showHUD('Difficulty: Easy', 'Alt + E / Clean lowercase prose');
+        return;
+      }
+
+      if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('thocktype:set-difficulty', { detail: { difficulty: 'medium' } }));
+        showHUD('Difficulty: Medium', 'Alt + M / Punctuated prose');
+        return;
+      }
+
+      if (e.altKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('thocktype:set-difficulty', { detail: { difficulty: 'hard' } }));
+        showHUD('Difficulty: Hard', 'Alt + H / Numbers & symbol keys');
+        return;
+      }
+
+      // 8. Alt + X: Toggle Mute / Unmute
+      if (e.altKey && (e.key === 'x' || e.key === 'X')) {
+        e.preventDefault();
+        toggleMute();
+        showHUD(
+          !isMuted ? 'Audio Muted' : 'Audio Unmuted',
+          'Alt + X'
+        );
+        return;
+      }
+
+      // 9. Alt + 1..8: Hot-swap mechanical switches globally
       if (e.altKey && e.key >= '1' && e.key <= '8') {
         const index = parseInt(e.key, 10) - 1;
         const targetPack = PACK_IDS[index];
@@ -115,25 +223,14 @@ export function GlobalShortcuts() {
           const profile = SWITCH_PROFILES[targetPack];
           showHUD(
             `Switched to ${profile.name}`,
-            `Alt + ${index + 1} • ${profile.category} (${profile.pitch} Pitch)`,
+            `Alt + ${index + 1} / ${profile.category} (${profile.pitch} Pitch)`,
             targetPack
           );
           return;
         }
       }
 
-      // 6. Alt + M: Toggle Mute / Unmute
-      if (e.altKey && (e.key === 'm' || e.key === 'M')) {
-        e.preventDefault();
-        toggleMute();
-        showHUD(
-          !isMuted ? 'Audio Muted' : 'Audio Unmuted',
-          'Alt + M'
-        );
-        return;
-      }
-
-      // 7. Alt + ArrowUp / ArrowDown: Adjust Volume by 10%
+      // 10. Alt + ArrowUp / ArrowDown: Adjust Volume by 10%
       if (e.altKey && e.key === 'ArrowUp') {
         e.preventDefault();
         const nextVol = Math.min(1, Math.round((volume + 0.1) * 10) / 10);
@@ -149,31 +246,23 @@ export function GlobalShortcuts() {
         return;
       }
 
-      // 8. Alt + T: Quick Navigate to Typing Test
-      if (e.altKey && (e.key === 't' || e.key === 'T')) {
-        e.preventDefault();
-        router.push('/test');
-        showHUD('Navigating to Typing Test', 'Alt + T');
-        return;
-      }
-
-      // 9. Alt + S: Quick Navigate to Sound Lab
-      if (e.altKey && (e.key === 's' || e.key === 'S')) {
+      // 11. Alt + L: Quick Navigate to Sound Lab
+      if (e.altKey && (e.key === 'l' || e.key === 'L')) {
         e.preventDefault();
         router.push('/sounds');
-        showHUD('Navigating to Sound Lab', 'Alt + S');
+        showHUD('Navigating to Sound Lab', 'Alt + L');
         return;
       }
 
-      // 10. Alt + H: Quick Navigate to Home
-      if (e.altKey && (e.key === 'h' || e.key === 'H')) {
+      // 12. Alt + 0: Quick Navigate to Home
+      if (e.altKey && e.key === '0') {
         e.preventDefault();
         router.push('/');
-        showHUD('Navigating to Home', 'Alt + H');
+        showHUD('Navigating to Home', 'Alt + 0');
         return;
       }
 
-      // 11. Alt + K: Quick Navigate to Shortcuts Page
+      // 13. Alt + K: Quick Navigate to Shortcuts Page
       if (e.altKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         router.push('/shortcuts');
@@ -227,7 +316,7 @@ export function GlobalShortcuts() {
               </div>
             ) : (
               <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                <Sparkles className="w-4 h-4" />
+                <Sliders className="w-4 h-4" />
               </div>
             )}
             <div>
@@ -247,12 +336,12 @@ export function GlobalShortcuts() {
       {/* Interactive Quick Shortcut Cheat-Sheet Modal (Press ? anywhere) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-100">
-          <div className="w-full max-w-2xl bg-zinc-900/95 border border-zinc-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl text-zinc-100 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl bg-[#131418] border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl text-zinc-100 max-h-[90vh] overflow-y-auto">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-amber-400">
                   <Keyboard className="w-4 h-4" />
                 </div>
                 <div>
@@ -260,7 +349,7 @@ export function GlobalShortcuts() {
                     Keyboard Shortcuts Reference
                   </h3>
                   <p className="text-[11px] font-mono text-zinc-400">
-                    Global shortcuts available on every page
+                    Tactile system shortcuts available across all pages
                   </p>
                 </div>
               </div>
@@ -276,64 +365,89 @@ export function GlobalShortcuts() {
             {/* Shortcut Grid Sections */}
             <div className="mt-6 space-y-6 text-xs">
               
-              {/* 1. Global Navigation */}
+              {/* 1. Global Navigation & Modes */}
               <div>
                 <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-400 block mb-2.5">
-                  1. Navigation & Modes
+                  1. Modes & Duration
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-300">Cycle Duration (15s/30s/60s/90s)</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-amber-300 font-bold">Alt + S</kbd>
+                  </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
                     <span className="text-zinc-300">Open Zen Focus Mode</span>
                     <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-amber-300 font-bold">Alt + F</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Jump to Typing Test</span>
+                    <span className="text-zinc-300">Switch to Time Mode</span>
                     <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + T</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Jump to Sound Lab</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + S</kbd>
+                    <span className="text-zinc-300">Switch to Word Target</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + W</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Go to Home</span>
+                    <span className="text-zinc-300">Switch to Unlimited Mode</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + U</kbd>
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-300">Switch to Custom Passage</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + C</kbd>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Difficulty Tiers */}
+              <div>
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400 block mb-2.5">
+                  2. Vocabulary & Difficulty
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-300">Easy (Lowercase)</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + E</kbd>
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-300">Medium (Punctuation)</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + M</kbd>
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-300">Hard (Numbers & Symbols)</span>
                     <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + H</kbd>
                   </div>
                 </div>
               </div>
 
-              {/* 2. Typing Test Controls */}
+              {/* 3. Audio & Volume Controls */}
               <div>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400 block mb-2.5">
-                  2. Typing Test Controls
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-rose-400 block mb-2.5">
+                  3. Audio & Volume Controls
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Restart Current Test</span>
-                    <div className="flex items-center gap-1 font-mono">
-                      <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200">Tab</kbd>
-                      <span>+</span>
-                      <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200">Enter</kbd>
-                    </div>
+                    <span className="text-zinc-300">Toggle Mute</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + X</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Instant Restart (Alternate)</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Shift + Enter</kbd>
+                    <span className="text-zinc-300">Sound Lab</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + L</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Finish Unlimited / Exit</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Esc</kbd>
+                    <span className="text-zinc-300">Volume Up</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + ↑</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Open Cheat Sheet</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">?</kbd>
+                    <span className="text-zinc-300">Volume Down</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + ↓</kbd>
                   </div>
                 </div>
               </div>
 
-              {/* 3. Audio & Mechanical Switch Hot-Swap */}
+              {/* 4. Switch Sound Hot-Swap */}
               <div>
                 <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400 block mb-2.5">
-                  3. Switch Sound Hot-Swap (Alt + 1..8)
+                  4. Switch Sound Hot-Swap (Alt + 1..8)
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PACK_IDS.map((id, index) => {
@@ -356,23 +470,27 @@ export function GlobalShortcuts() {
                 </div>
               </div>
 
-              {/* 4. Global Volume Controls */}
+              {/* 5. Typing Test Session Controls */}
               <div>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-rose-400 block mb-2.5">
-                  4. Audio & Volume Controls
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-400 block mb-2.5">
+                  5. Typing Test Session Controls
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Toggle Mute</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + M</kbd>
+                    <span className="text-zinc-300">Restart Test</span>
+                    <div className="flex items-center gap-1 font-mono">
+                      <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200">Tab</kbd>
+                      <span>+</span>
+                      <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200">Enter</kbd>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Volume Up (+10%)</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + ↑</kbd>
+                    <span className="text-zinc-300">Alternate Restart</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Shift + Enter</kbd>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                    <span className="text-zinc-300">Volume Down (-10%)</span>
-                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Alt + ↓</kbd>
+                    <span className="text-zinc-300">Finish / Exit</span>
+                    <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-200">Esc</kbd>
                   </div>
                 </div>
               </div>

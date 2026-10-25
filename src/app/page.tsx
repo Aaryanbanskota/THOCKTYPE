@@ -51,13 +51,12 @@ export default function HomePage() {
       <section className="relative w-full pt-8 sm:pt-14 pb-10 sm:pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
         
         {/* Unified Product Context Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-neutral-800 text-xs font-mono text-neutral-300 mb-6 shadow-sm backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span>Acoustic Mechanical Sound Lab</span>
-          <span className="text-neutral-600">•</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900/90 border border-neutral-800 text-xs font-mono text-neutral-300 mb-6 shadow-sm backdrop-blur-md">
+          <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">ACOUSTIC LAB</span>
+          <span className="text-neutral-600">/</span>
           <span className="text-neutral-400">8 Studio Profiles</span>
-          <span className="text-neutral-600">•</span>
-          <span className="text-amber-400/90 font-semibold">Zero Signup</span>
+          <span className="text-neutral-600">/</span>
+          <span className="text-amber-400 font-medium">Zero Signup</span>
         </div>
 
         {/* Main Rhythmic Headline */}
@@ -99,14 +98,15 @@ export default function HomePage() {
           {/* Active Switch Status Bar */}
           <div className="w-full flex items-center justify-between pb-3 px-2 text-xs font-mono">
             <div className="flex items-center gap-2 text-zinc-400">
-              <span
-                className="w-2.5 h-2.5 rounded-full inline-block animate-pulse shrink-0"
-                style={{ backgroundColor: currentProfile?.color }}
+              <SwitchIcon
+                id={activePack}
+                className="w-4 h-4 shrink-0"
+                style={{ color: currentProfile?.color }}
               />
               <span className="text-zinc-500 font-medium">ACTIVE ACOUSTICS:</span>
               <span className="text-zinc-100 font-bold">{currentProfile?.name}</span>
               <span className="text-[11px] text-zinc-500">
-                ({currentProfile?.category} • {currentProfile?.pitch} Pitch)
+                ({currentProfile?.category} / {currentProfile?.pitch} Pitch)
               </span>
             </div>
 

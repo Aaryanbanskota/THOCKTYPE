@@ -24,7 +24,6 @@ import {
   Clock,
   Activity,
   Layers,
-  Sparkles,
   Command,
   SignalLow,
   SignalMedium,
@@ -168,9 +167,29 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
   const totalErrorsCommittedRef = useRef<number>(0);
   const missedKeysRef = useRef<Record<string, number>>({});
 
-  // Initialize word list
-  const initWords = useCallback(() => {
-    if (mode === 'custom') {
+  // Keep live refs for hotkeys and custom event handlers
+  const durationRef = useRef<number>(duration);
+  durationRef.current = duration;
+  const modeRef = useRef<TestMode>(mode);
+  modeRef.current = mode;
+  const difficultyRef = useRef<DifficultyMode>(difficulty);
+  difficultyRef.current = difficulty;
+  const wordTargetRef = useRef<number>(wordTarget);
+  wordTargetRef.current = wordTarget;
+
+  // Initialize word list with optional overrides for immediate synchronous changes
+  const initWords = useCallback((
+    overrideMode?: TestMode,
+    overrideDuration?: number,
+    overrideWordTarget?: number,
+    overrideDiff?: DifficultyMode
+  ) => {
+    const activeM = overrideMode ?? mode;
+    const activeD = overrideDuration ?? duration;
+    const activeWT = overrideWordTarget ?? wordTarget;
+    const activeDifficulty = overrideDiff ?? difficulty;
+
+    if (activeM === 'custom') {
       if (customWords.length > 0) {
         setWords(customWords);
         return;
@@ -183,15 +202,15 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
     }
 
     let wordCount = 70;
-    if (mode === 'words') {
-      wordCount = wordTarget;
-    } else if (mode === 'time') {
-      wordCount = Math.max(80, Math.floor(duration * 2.5));
-    } else if (mode === 'unlimited') {
+    if (activeM === 'words') {
+      wordCount = activeWT;
+    } else if (activeM === 'time') {
+      wordCount = Math.max(80, Math.floor(activeD * 2.5));
+    } else if (activeM === 'unlimited') {
       wordCount = 120;
     }
 
-    let activeDiff = difficulty;
+    let activeDiff = activeDifficulty;
     if (hasNumbers) {
       activeDiff = 'hard';
     } else if (hasPunctuation) {
@@ -216,8 +235,18 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Reset test to clean initial state
-  const resetTest = useCallback(() => {
+  // Reset test to clean initial state with optional immediate parameter overrides
+  const resetTest = useCallback((
+    overrideDuration?: number,
+    overrideMode?: TestMode,
+    overrideDiff?: DifficultyMode,
+    overrideWordTarget?: number
+  ) => {
+    const activeD = overrideDuration ?? duration;
+    const activeM = overrideMode ?? mode;
+    const activeDiff = overrideDiff ?? difficulty;
+    const activeWT = overrideWordTarget ?? wordTarget;
+
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
 
@@ -246,14 +275,14 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
     setRawWpm(0);
     setAccuracy(100);
     setElapsedSeconds(0);
-    setTimeLeft(mode === 'time' ? duration : 0);
+    setTimeLeft(activeM === 'time' ? activeD : 0);
 
-    initWords();
+    initWords(activeM, activeD, activeWT, activeDiff);
 
     setTimeout(() => {
       inputRef.current?.focus();
     }, 40);
-  }, [mode, duration, initWords]);
+  }, [mode, duration, difficulty, wordTarget, initWords]);
 
   // Initial focus
   useEffect(() => {
@@ -594,26 +623,12 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
     }
   };
 
-  // Global Keyboard Shortcuts (Tab+Enter: Restart, Alt+F: Focus Mode, Esc: Reset / Finish Unlimited, Alt+1-8: Switch sound)
+  // Keyboard Shortcuts & Event Listeners
   useEffect(() => {
     let tabPressed = false;
 
     const onGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
-        tabPressed = true;
-      }
-      if (e.key === 'Enter' && tabPressed) {
-        e.preventDefault();
-        resetTest();
-      }
-
-      // Shortcut: Alt + F to open Focus mode in a new tab
-      if ((e.altKey || (e.ctrlKey && e.shiftKey)) && (e.key === 'f' || e.key === 'F')) {
-        e.preventDefault();
-        window.open(`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}`, '_blank');
-      }
-
-      // Global restart hotkey: Tab + Enter (or Enter directly when finished)
+      // 1. Tab + Enter: Instant Restart
       if (e.key === 'Tab') {
         tabPressed = true;
       }
@@ -623,7 +638,127 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
         return;
       }
 
-      // Shortcut: Alt + 1-8 to switch sound packs
+      // 2. Alt + S: Cycle Duration (15s -> 30s -> 60s -> 90s)
+      if (e.altKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        const DURATIONS = [15, 30, 60, 90];
+        const curDur = durationRef.current;
+        const curIdx = DURATIONS.indexOf(curDur);
+        const nextDur = DURATIONS[(curIdx + 1) % DURATIONS.length];
+        durationRef.current = nextDur;
+        modeRef.current = 'time';
+        setDuration(nextDur);
+        setMode('time');
+        resetTest(nextDur, 'time');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: `Duration: ${nextDur}s`, subtext: 'Alt + S / Quick Cycle' }
+        }));
+        return;
+      }
+
+      // 3. Alt + T: Switch to Time Mode
+      if (e.altKey && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        modeRef.current = 'time';
+        setMode('time');
+        resetTest(durationRef.current, 'time');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: `Mode: Time (${durationRef.current}s)`, subtext: 'Alt + T' }
+        }));
+        return;
+      }
+
+      // 4. Alt + W: Switch to Words Mode
+      if (e.altKey && (e.key === 'w' || e.key === 'W')) {
+        e.preventDefault();
+        modeRef.current = 'words';
+        setMode('words');
+        resetTest(durationRef.current, 'words');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: `Mode: Word Target (${wordTargetRef.current}w)`, subtext: 'Alt + W' }
+        }));
+        return;
+      }
+
+      // 5. Alt + U: Switch to Unlimited Mode
+      if (e.altKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        modeRef.current = 'unlimited';
+        setMode('unlimited');
+        resetTest(durationRef.current, 'unlimited');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Mode: Unlimited Stream', subtext: 'Alt + U' }
+        }));
+        return;
+      }
+
+      // 6. Alt + C: Switch to Custom Passage Mode
+      if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        modeRef.current = 'custom';
+        setMode('custom');
+        setIsCustomModalOpen(true);
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Mode: Custom Passage', subtext: 'Alt + C' }
+        }));
+        return;
+      }
+
+      // 7. Alt + F: Open Zen Focus Mode in new tab with the exact current duration and settings
+      if ((e.altKey || (e.ctrlKey && e.shiftKey)) && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        const activeDur = modeRef.current === 'time' ? durationRef.current : 0;
+        window.open(
+          `/focus?duration=${activeDur}&pack=${activePack}&diff=${difficultyRef.current}&mode=${modeRef.current}`,
+          '_blank'
+        );
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: {
+            message: `Zen Focus Mode (${activeDur > 0 ? activeDur + 's' : 'Endless'})`,
+            subtext: 'Alt + F / New Window',
+            packId: activePack
+          }
+        }));
+        return;
+      }
+
+      // 8. Alt + E: Easy Difficulty (Clean lowercase prose)
+      if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        difficultyRef.current = 'easy';
+        setDifficulty('easy');
+        resetTest(durationRef.current, modeRef.current, 'easy');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Difficulty: Easy', subtext: 'Alt + E / Clean lowercase prose' }
+        }));
+        return;
+      }
+
+      // 9. Alt + M: Medium Difficulty (Punctuated prose)
+      if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+        e.preventDefault();
+        difficultyRef.current = 'medium';
+        setDifficulty('medium');
+        resetTest(durationRef.current, modeRef.current, 'medium');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Difficulty: Medium', subtext: 'Alt + M / Punctuated prose' }
+        }));
+        return;
+      }
+
+      // 10. Alt + H: Hard Difficulty (Numbers & symbol keys)
+      if (e.altKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        difficultyRef.current = 'hard';
+        setDifficulty('hard');
+        resetTest(durationRef.current, modeRef.current, 'hard');
+        window.dispatchEvent(new CustomEvent('thocktype:hud', {
+          detail: { message: 'Difficulty: Hard', subtext: 'Alt + H / Numbers & symbol keys' }
+        }));
+        return;
+      }
+
+      // 11. Alt + 1-8: Switch sound pack
       if (e.altKey && e.key >= '1' && e.key <= '8') {
         const index = parseInt(e.key, 10) - 1;
         if (PACK_IDS[index]) {
@@ -633,7 +768,7 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
         }
       }
 
-      // Shortcut: Esc to finish session or reset
+      // 12. Esc: Finish session if typing, or reset
       if (e.key === 'Escape') {
         e.preventDefault();
         if (isStarted && !isFinished && input.length > 5) {
@@ -654,16 +789,60 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
       resetTest();
     };
 
+    const onCycleDurationEvent = () => {
+      const DURATIONS = [15, 30, 60, 90];
+      const curDur = durationRef.current;
+      const curIdx = DURATIONS.indexOf(curDur);
+      const nextDur = DURATIONS[(curIdx + 1) % DURATIONS.length];
+      durationRef.current = nextDur;
+      modeRef.current = 'time';
+      setDuration(nextDur);
+      setMode('time');
+      resetTest(nextDur, 'time');
+    };
+
+    const onSetModeEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ mode: TestMode }>;
+      if (custom.detail?.mode) {
+        modeRef.current = custom.detail.mode;
+        setMode(custom.detail.mode);
+        resetTest(durationRef.current, custom.detail.mode);
+      }
+    };
+
+    const onSetDifficultyEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ difficulty: DifficultyMode }>;
+      if (custom.detail?.difficulty) {
+        difficultyRef.current = custom.detail.difficulty;
+        setDifficulty(custom.detail.difficulty);
+        resetTest(durationRef.current, modeRef.current, custom.detail.difficulty);
+      }
+    };
+
+    const onOpenCustomEvent = () => {
+      modeRef.current = 'custom';
+      setMode('custom');
+      setIsCustomModalOpen(true);
+    };
+
     window.addEventListener('keydown', onGlobalKeyDown);
     window.addEventListener('keyup', onGlobalKeyUp);
     window.addEventListener('thocktype:restart-test', onRestartEvent);
+    window.addEventListener('thocktype:cycle-duration', onCycleDurationEvent);
+    window.addEventListener('thocktype:set-mode', onSetModeEvent);
+    window.addEventListener('thocktype:set-difficulty', onSetDifficultyEvent);
+    window.addEventListener('thocktype:open-custom', onOpenCustomEvent);
 
     return () => {
       window.removeEventListener('keydown', onGlobalKeyDown);
       window.removeEventListener('keyup', onGlobalKeyUp);
       window.removeEventListener('thocktype:restart-test', onRestartEvent);
+      window.removeEventListener('thocktype:cycle-duration', onCycleDurationEvent);
+      window.removeEventListener('thocktype:set-mode', onSetModeEvent);
+      window.removeEventListener('thocktype:set-difficulty', onSetDifficultyEvent);
+      window.removeEventListener('thocktype:open-custom', onOpenCustomEvent);
     };
-  }, [resetTest, mode, isStarted, isFinished, input, elapsedSeconds, duration, activePack, setActivePack, playKey, finishTest]);
+  }, [resetTest, isStarted, isFinished, input, elapsedSeconds, activePack, setActivePack, playKey, finishTest]);
 
   // Line-by-line auto-scroll: smoothly rolls up finished lines so upcoming text is always visible
   useEffect(() => {
@@ -818,34 +997,37 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
           <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
             <button
               type="button"
-              onClick={() => { setMode('time'); resetTest(); }}
+              onClick={() => { setMode('time'); resetTest(duration, 'time'); }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 mode === 'time'
                   ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
+              title="Time Mode (Alt + T)"
             >
               time
             </button>
             <button
               type="button"
-              onClick={() => { setMode('words'); resetTest(); }}
+              onClick={() => { setMode('words'); resetTest(undefined, 'words'); }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 mode === 'words'
                   ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
+              title="Word Target Mode (Alt + W)"
             >
               words
             </button>
             <button
               type="button"
-              onClick={() => { setMode('unlimited'); resetTest(); }}
+              onClick={() => { setMode('unlimited'); resetTest(undefined, 'unlimited'); }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                 mode === 'unlimited'
                   ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
+              title="Unlimited Stream (Alt + U)"
             >
               <span>unlimited</span>
               <span className="text-[10px] text-amber-400/80">∞</span>
@@ -857,7 +1039,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                 if (customWords.length === 0) {
                   setIsCustomModalOpen(true);
                 } else {
-                  resetTest();
+                  resetTest(undefined, 'custom');
                 }
               }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
@@ -865,6 +1047,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                   ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
+              title="Custom Text (Alt + C)"
             >
               custom
             </button>
@@ -877,16 +1060,18 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                 <button
                   key={sec}
                   type="button"
-                  onClick={() => { setDuration(sec); resetTest(); }}
+                  onClick={() => { setDuration(sec); resetTest(sec, 'time'); }}
                   className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                     duration === sec
                       ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
+                  title={`Test duration: ${sec}s (Cycle with Alt + S)`}
                 >
                   {sec}s
                 </button>
               ))}
+              <span className="hidden sm:inline text-[9px] text-zinc-500 font-mono px-1">Alt+S</span>
             </div>
           )}
 
@@ -896,7 +1081,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                 <button
                   key={cnt}
                   type="button"
-                  onClick={() => { setWordTarget(cnt); resetTest(); }}
+                  onClick={() => { setWordTarget(cnt); resetTest(undefined, 'words', undefined, cnt); }}
                   className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                     wordTarget === cnt
                       ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
@@ -911,7 +1096,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
 
           {mode === 'unlimited' && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px] font-mono text-amber-300 font-bold">STREAM</span>
               <span>Endless Stream</span>
             </div>
           )}
@@ -935,11 +1120,12 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
           <div className="flex items-center bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
             {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => {
               const isSelected = difficulty === d;
+              const shortcutKey = d === 'easy' ? 'E' : d === 'medium' ? 'M' : 'H';
               return (
                 <button
                   key={d}
                   type="button"
-                  onClick={() => setDifficulty(d)}
+                  onClick={() => { setDifficulty(d); resetTest(undefined, undefined, d); }}
                   className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                     isSelected
                       ? d === 'easy'
@@ -949,7 +1135,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                         : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold shadow-sm'
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
-                  title={`${d.toUpperCase()} mode: ${
+                  title={`${d.toUpperCase()} mode (Alt + ${shortcutKey}): ${
                     d === 'easy' ? 'Clean lowercase text' : d === 'medium' ? 'Punctuation & commas' : 'Numbers, symbols & full key practice'
                   }`}
                 >
@@ -1304,7 +1490,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <button
                   type="button"
-                  onClick={resetTest}
+                  onClick={() => resetTest()}
                   className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95 cursor-pointer pointer-events-auto"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
@@ -1337,12 +1523,15 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
               </div>
 
               {/* Tab + Enter keyboard shortcut indicator */}
-              <div className="flex items-center justify-center gap-2 text-xs font-mono text-zinc-400 select-none">
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-mono text-zinc-400 select-none">
                 <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Tab</kbd>
                 <span>+</span>
                 <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Enter</kbd>
-                <span className="text-zinc-400">— Restart test</span>
-                <span className="text-zinc-600 px-1">•</span>
+                <span className="text-zinc-400">— Restart</span>
+                <span className="text-zinc-600 px-1">/</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Alt + S</kbd>
+                <span className="text-zinc-400">— Cycle Time</span>
+                <span className="text-zinc-600 px-1">/</span>
                 <kbd className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px]">Alt + F</kbd>
                 <span className="text-zinc-400">— Zen Mode</span>
               </div>
@@ -1433,7 +1622,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={resetTest}
+                    onClick={() => resetTest()}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold transition active:scale-95 cursor-pointer shadow-md"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -1745,7 +1934,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                   
                   {hoveredChartIndex !== null && chartData.pts[hoveredChartIndex] && (
                     <div className="text-[11px] text-neutral-300 bg-neutral-800/80 px-2.5 py-0.5 rounded-md border border-neutral-700/60">
-                      t={chartData.pts[hoveredChartIndex].pt.second}s • Net: {chartData.pts[hoveredChartIndex].pt.wpm} • Raw: {chartData.pts[hoveredChartIndex].pt.rawWpm}
+                      t={chartData.pts[hoveredChartIndex].pt.second}s | Net: {chartData.pts[hoveredChartIndex].pt.wpm} | Raw: {chartData.pts[hoveredChartIndex].pt.rawWpm}
                     </div>
                   )}
                 </div>
@@ -1924,7 +2113,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
             
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800/70">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Activity className="w-4 h-4 text-amber-400" />
                 <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-zinc-200">
                   Acoustic & Friction Diagnostics
                 </h3>
@@ -1962,7 +2151,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
                         </span>
                       </div>
                       <div className="text-[11px] font-mono text-zinc-400">
-                        {currentProfile?.pitch} Pitch • {currentProfile?.loudness}
+                        {currentProfile?.pitch} Pitch / {currentProfile?.loudness}
                       </div>
                     </div>
                   </div>
@@ -2112,7 +2301,7 @@ Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
               />
               <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500">
                 <span>
-                  {customRawInput.trim() ? customRawInput.trim().split(/\s+/).filter(Boolean).length : 0} words • {customRawInput.length} chars
+                  {customRawInput.trim() ? customRawInput.trim().split(/\s+/).filter(Boolean).length : 0} words / {customRawInput.length} chars
                 </span>
                 <span>Auto-cleans formatting</span>
               </div>
