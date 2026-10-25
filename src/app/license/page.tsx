@@ -4,7 +4,10 @@ import { Award, Code2, Sparkles, CheckCircle2, Shield } from 'lucide-react';
 
 export const metadata = {
   title: 'Open Source License & Attributions | THOCKTYPE',
-  description: 'ThockType MIT open source license, audio recording attributions, and public repository credits.'
+  description: 'ThockType MIT open source license, audio recording attributions, and public repository credits.',
+  alternates: {
+    canonical: 'https://thocktype.vercel.app/license',
+  },
 };
 
 export default function LicensePage() {

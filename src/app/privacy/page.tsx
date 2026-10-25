@@ -4,7 +4,10 @@ import { ShieldCheck, Lock, EyeOff, Server, HardDrive, FileText, CheckCircle } f
 
 export const metadata = {
   title: 'Privacy Policy | THOCKTYPE',
-  description: 'ThockType privacy policy — zero cookies, zero telemetry, 100% local Web Audio processing.'
+  description: 'ThockType privacy policy — zero cookies, zero telemetry, 100% local Web Audio processing.',
+  alternates: {
+    canonical: 'https://thocktype.vercel.app/privacy',
+  },
 };
 
 export default function PrivacyPolicyPage() {

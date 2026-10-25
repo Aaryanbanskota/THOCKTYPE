@@ -48,6 +48,39 @@ export interface TypingTestProps {
   initialMode?: TestMode;
 }
 
+interface SplinePoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Computes a smooth cubic bezier SVG path across an array of coordinate points.
+ * Creates continuous curved wave splines matching high-end acoustic benchmarking graphs.
+ */
+function getCubicBezierPath(points: SplinePoint[]): string {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  if (points.length === 2) {
+    return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)} ${points[1].y.toFixed(1)}`;
+  }
+
+  let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(i - 1, 0)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(i + 2, points.length - 1)];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
 export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
   const {
     activePack,
@@ -77,6 +110,19 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
   const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>('md');
   const [isSwitchPickerOpen, setIsSwitchPickerOpen] = useState<boolean>(false);
   const [isVolumePickerOpen, setIsVolumePickerOpen] = useState<boolean>(false);
+
+  // Benchmark Settings & Visual Controls (Matching screenshot layout)
+  const [highlightStyle, setHighlightStyle] = useState<'character' | 'word' | 'caret'>('character');
+  const [highlightInputOnError, setHighlightInputOnError] = useState<boolean>(true);
+  const [showTimer, setShowTimer] = useState<boolean>(true);
+  const [hasPunctuation, setHasPunctuation] = useState<boolean>(false);
+  const [hasNumbers, setHasNumbers] = useState<boolean>(false);
+  const [hoveredChartIndex, setHoveredChartIndex] = useState<number | null>(null);
+  const [copiedShare, setCopiedShare] = useState<boolean>(false);
+  const [showDiagnosticsDetail, setShowDiagnosticsDetail] = useState<boolean>(true);
+
+  // Exact Error Timestamps
+  const errorTimestampsRef = useRef<number[]>([]);
 
   const switchPickerRef = useRef<HTMLDivElement | null>(null);
   const volumePickerRef = useRef<HTMLDivElement | null>(null);
@@ -144,9 +190,17 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
     } else if (mode === 'unlimited') {
       wordCount = 120;
     }
-    const newWords = generateTextByDifficulty(difficulty, wordCount);
+
+    let activeDiff = difficulty;
+    if (hasNumbers) {
+      activeDiff = 'hard';
+    } else if (hasPunctuation) {
+      activeDiff = 'medium';
+    }
+
+    const newWords = generateTextByDifficulty(activeDiff, wordCount);
     setWords(newWords);
-  }, [mode, duration, wordTarget, difficulty, customWords]);
+  }, [mode, duration, wordTarget, difficulty, customWords, hasNumbers, hasPunctuation]);
 
   // Close toolbar menus on outside click
   useEffect(() => {
@@ -175,6 +229,8 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
     correctedErrorsRef.current = 0;
     totalErrorsCommittedRef.current = 0;
     missedKeysRef.current = {};
+    errorTimestampsRef.current = [];
+    setHoveredChartIndex(null);
     lastLineTopRef.current = 0;
 
     if (textContainerRef.current) {
@@ -348,6 +404,7 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
       troubleKeys,
       soundPack: activePack,
       history: [...history, { second: Math.round(exactSeconds), wpm: finalNetWpm, rawWpm: finalRawWpm, errors: incorrectChars }],
+      errorTimestamps: [...errorTimestampsRef.current],
       report
     };
 
@@ -432,6 +489,10 @@ export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
           totalErrorsCommittedRef.current++;
           const targetChar = fullText[i] || ' ';
           missedKeysRef.current[targetChar] = (missedKeysRef.current[targetChar] || 0) + 1;
+          const currentSec = startTimeRef.current
+            ? Math.max(0.5, (performance.now() - startTimeRef.current) / 1000)
+            : elapsedSeconds;
+          errorTimestampsRef.current.push(Math.round(currentSec * 10) / 10);
         }
       }
     }
@@ -644,12 +705,104 @@ Difficulty: ${results.difficulty.toUpperCase()} | Tier: ${results.report?.tier |
 Actuation: ${results.kps} KPS (${results.msPerKey}ms/key)
 Switch: ${profile?.name} (${profile?.category})
 Capacity: ${results.report?.potentialHeadline || 'Practice & grow'}
-Benchmark verified: ${window.location.origin}`;
+Benchmark verified: ${typeof window !== 'undefined' ? window.location.origin : 'https://thocktype.vercel.app'}`;
     
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
+
+  const handleShareTest = () => {
+    if (!results) return;
+    const profile = SWITCH_PROFILES[results.soundPack];
+    const shareText = `⌨️ THOCKTYPE Benchmark Result:
+Speed: ${results.wpm} WPM | Raw: ${results.rawWpm} WPM
+Accuracy: ${typeof results.accuracy === 'number' ? results.accuracy.toFixed(1) : results.accuracy}% | Consistency: ${results.consistency}%
+Switch Sound: ${profile?.name || 'Mechanical Switch'} (${profile?.category || 'Mechanical'})
+Test Duration: ${results.exactSeconds ? results.exactSeconds.toFixed(1) : results.timeSpent}s | Efficiency: ${results.efficiency || 100}%
+Verified at THOCKTYPE: https://thocktype.vercel.app/test`;
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        setCopiedShare(true);
+        setTimeout(() => setCopiedShare(false), 2500);
+      }).catch(() => {
+        setCopiedShare(true);
+        setTimeout(() => setCopiedShare(false), 2500);
+      });
+    } else {
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    }
+  };
+
+  // Spline Chart Data Calculations for Benchmark Graph (Matching visual reference)
+  const chartData = useMemo(() => {
+    if (!results?.history || results.history.length === 0) return null;
+    const hist = results.history;
+
+    let maxVal = 60;
+    hist.forEach((pt) => {
+      if (pt.wpm > maxVal) maxVal = pt.wpm;
+      if (pt.rawWpm > maxVal) maxVal = pt.rawWpm;
+    });
+    const maxY = Math.max(100, Math.ceil((maxVal + 20) / 20) * 20);
+
+    const svgWidth = 1000;
+    const svgHeight = 220;
+    const padL = 35;
+    const padR = 60;
+    const padT = 25;
+    const padB = 30;
+    const plotW = svgWidth - padL - padR;
+    const plotH = svgHeight - padT - padB;
+
+    const pts = hist.map((pt, i) => {
+      const frac = hist.length > 1 ? i / (hist.length - 1) : 0.5;
+      const x = padL + frac * plotW;
+      const y = padT + plotH - (Math.min(pt.wpm, maxY) / maxY) * plotH;
+      return { x, y, pt, i };
+    });
+
+    const rawPts = hist.map((pt, i) => {
+      const frac = hist.length > 1 ? i / (hist.length - 1) : 0.5;
+      const x = padL + frac * plotW;
+      const y = padT + plotH - (Math.min(pt.rawWpm, maxY) / maxY) * plotH;
+      return { x, y, pt, i };
+    });
+
+    const netSpline = getCubicBezierPath(pts);
+    const rawSpline = getCubicBezierPath(rawPts);
+
+    const testDuration = Math.max(1, results.exactSeconds || results.timeSpent || hist.length);
+    const errorPoints = (results.errorTimestamps || []).map((errSec, idx) => {
+      const frac = Math.min(1, Math.max(0, errSec / testDuration));
+      const errX = padL + frac * plotW;
+      const matchedIdx = Math.min(pts.length - 1, Math.floor(frac * (pts.length - 1)));
+      const curveY = pts[matchedIdx]?.y || (padT + plotH * 0.7);
+      const errY = Math.min(padT + plotH - 6, Math.max(padT + 12, curveY + (idx % 2 === 0 ? -16 : 16)));
+      return { x: errX, y: errY, sec: errSec, idx };
+    });
+
+    return {
+      svgWidth,
+      svgHeight,
+      padL,
+      padR,
+      padT,
+      padB,
+      plotW,
+      plotH,
+      maxY,
+      pts,
+      rawPts,
+      netSpline,
+      rawSpline,
+      errorPoints,
+    };
+  }, [results]);
 
   const currentProfile = SWITCH_PROFILES[activePack];
 
@@ -979,26 +1132,28 @@ Benchmark verified: ${window.location.origin}`;
         </div>
 
         {/* Time / Progress */}
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1 flex items-center gap-1">
-            {mode === 'unlimited' ? (
-              <span className="inline-flex items-center gap-1 text-amber-400">
-                <span>Time (∞)</span>
-              </span>
-            ) : mode === 'custom' ? (
-              <span>Progress</span>
-            ) : (
-              <span>Time</span>
-            )}
-          </span>
-          <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
-            {mode === 'time'
-              ? `${timeLeft}s`
-              : mode === 'custom'
-              ? `${Math.min(100, Math.round((input.length / (fullText.length || 1)) * 100))}%`
-              : `${elapsedSeconds}s`}
-          </span>
-        </div>
+        {showTimer && (
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1 flex items-center gap-1">
+              {mode === 'unlimited' ? (
+                <span className="inline-flex items-center gap-1 text-amber-400">
+                  <span>Time (∞)</span>
+                </span>
+              ) : mode === 'custom' ? (
+                <span>Progress</span>
+              ) : (
+                <span>Time</span>
+              )}
+            </span>
+            <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
+              {mode === 'time'
+                ? `${timeLeft}s`
+                : mode === 'custom'
+                ? `${Math.min(100, Math.round((input.length / (fullText.length || 1)) * 100))}%`
+                : `${elapsedSeconds}s`}
+            </span>
+          </div>
+        )}
 
         {/* Extra Counter for Unlimited Mode: Words Typed */}
         {mode === 'unlimited' && (
@@ -1067,18 +1222,40 @@ Benchmark verified: ${window.location.origin}`;
               const isCorrect = isTyped && typedChar === char;
               const isIncorrect = isTyped && typedChar !== char;
 
+              let isWordActive = false;
+              if (highlightStyle === 'word') {
+                const currentInputLen = input.length;
+                const prevSpace = fullText.lastIndexOf(' ', Math.max(0, currentInputLen - 1));
+                const nextSpace = fullText.indexOf(' ', currentInputLen);
+                const wordStart = prevSpace === -1 ? 0 : prevSpace + 1;
+                const wordEnd = nextSpace === -1 ? fullText.length : nextSpace;
+                isWordActive = index >= wordStart && index < wordEnd;
+              }
+
               let charClass = 'text-zinc-500'; // Untouched future text
-              if (isCorrect) {
-                charClass = 'text-zinc-200'; // Correct letter (bright white/cream)
-              } else if (isIncorrect) {
-                charClass = 'text-rose-400 bg-rose-500/20 underline decoration-rose-500'; // Incorrect
+              if (highlightStyle === 'caret') {
+                if (isCorrect) {
+                  charClass = 'text-zinc-300';
+                } else if (isIncorrect) {
+                  charClass = highlightInputOnError
+                    ? 'text-rose-400 underline decoration-rose-500'
+                    : 'text-zinc-500 underline decoration-zinc-600';
+                }
+              } else {
+                if (isCorrect) {
+                  charClass = 'text-zinc-200';
+                } else if (isIncorrect) {
+                  charClass = highlightInputOnError
+                    ? 'text-rose-400 bg-rose-500/20 underline decoration-rose-500'
+                    : 'text-zinc-500 underline decoration-zinc-600';
+                }
               }
 
               return (
                 <span
                   key={index}
                   ref={isCurrent ? activeCharRef : null}
-                  className={`relative ${charClass}`}
+                  className={`relative ${charClass} ${isWordActive ? 'bg-amber-500/15 rounded-sm px-0.5' : ''}`}
                 >
                   {/* Smooth Caret Cursor on Active Letter */}
                   {isCurrent && (
@@ -1178,349 +1355,702 @@ Benchmark verified: ${window.location.origin}`;
          * REDESIGNED PREMIUM PERFORMANCE SCORECARD
          * Clean, bespoke audio-engineering layout with interactive area chart
          * ========================================================================= */
-        <div className="w-full rounded-2xl sm:rounded-3xl bg-zinc-900/80 border border-zinc-800/90 p-4 xs:p-6 sm:p-10 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+        /* =========================================================================
+         * VISUAL BENCHMARK SCORECARD (Inspired by Visual Reference)
+         * Clean dual-column parameters matrix + full-width spline graph with red × typos
+         * ========================================================================= */
+        <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-200">
           
-          {/* Scorecard Header & Switch Attribution */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-zinc-800/80">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
-                  Performance Diagnostics Verified
-                </span>
-                {results?.report?.tier && (
-                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold uppercase tracking-wider border ${results.report.tierBadgeColor}`}>
-                    {results.report.tier}
-                  </span>
-                )}
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight mt-1">
-                Typing Benchmark Report
-              </h2>
-            </div>
+          {/* Main Visual Benchmark Card */}
+          <div className="w-full rounded-3xl bg-[#121316] border border-neutral-800 p-5 xs:p-7 sm:p-10 shadow-2xl relative overflow-hidden">
             
-            {/* Active Switch Personality Card */}
-            <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-zinc-950/80 border border-zinc-800">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
-                style={{ backgroundColor: `${currentProfile?.color}20`, border: `1px solid ${currentProfile?.color}40` }}
-              >
-                <SwitchIcon
-                  id={results?.soundPack || activePack}
-                  className="w-5 h-5"
-                  style={{ color: currentProfile?.color }}
-                />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                  <span>{currentProfile?.name}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${currentProfile?.badgeBg}`}>
-                    {currentProfile?.category}
+            {/* Top Section: Dual-Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8">
+              
+              {/* Left Column: Big WPM, Stat Pills, Share Button */}
+              <div className="lg:col-span-5 flex flex-col justify-between">
+                
+                {/* Large WPM Hero */}
+                <div className="flex items-baseline gap-3 mb-5">
+                  <span className="text-5xl sm:text-6xl font-black text-white tracking-tight">
+                    {results?.wpm}
+                  </span>
+                  <span className="text-xl sm:text-2xl font-bold text-neutral-400">
+                    WPM
                   </span>
                 </div>
-                <div className="text-[11px] font-mono text-zinc-400">
-                  {currentProfile?.pitch} Pitch • {currentProfile?.loudness}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Target Capacity & Motivational Growth Engine */}
-          {results?.report && (
-            <div className="my-6 p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 via-zinc-950/60 to-zinc-900 border border-amber-500/30 shadow-lg">
-              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
-                    Target Capacity & Motivational Growth Projection
-                  </span>
-                </div>
-                <div className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                  Target: {results.report.projectedWpmMin} – {results.report.projectedWpmMax} WPM
-                </div>
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-zinc-100 tracking-tight">
-                {results.report.potentialHeadline}
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">
-                {results.report.motivationMessage}
-              </p>
-            </div>
-          )}
-
-          {/* Primary Speed Metric Hero */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 py-8 border-b border-zinc-800/80">
-            
-            {/* Net WPM */}
-            <div className="flex flex-col justify-center">
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Net WPM</span>
-              </span>
-              <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-amber-400">
-                {results?.wpm}
-              </div>
-              <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Words Per Minute (Error Penalized)
-              </span>
-            </div>
-
-            {/* Accuracy */}
-            <div className="flex flex-col justify-center">
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
-                <Target className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Accuracy</span>
-              </span>
-              <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-emerald-400">
-                {results?.accuracy}%
-              </div>
-              <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Strict Keystroke Audit
-              </span>
-            </div>
-
-            {/* Raw WPM */}
-            <div className="flex flex-col justify-center">
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Raw WPM</span>
-              </span>
-              <div className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-zinc-300">
-                {results?.rawWpm}
-              </div>
-              <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Gross Hand Velocity
-              </span>
-            </div>
-
-            {/* Consistency */}
-            <div className="flex flex-col justify-center">
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-sky-400" />
-                <span>Consistency</span>
-              </span>
-              <div className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-sky-400">
-                {results?.consistency}%
-              </div>
-              <span className="text-[11px] font-mono text-zinc-400 mt-1">
-                Interval Variance Cadence
-              </span>
-            </div>
-
-          </div>
-
-          {/* High-Friction Target Problem Keys */}
-          {results?.troubleKeys && results.troubleKeys.length > 0 && (
-            <div className="py-4 border-b border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-rose-400" />
-                <span className="font-semibold text-zinc-300">High-Friction Problem Keys:</span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {results.troubleKeys.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1.5"
-                  >
-                    <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-rose-500/40 text-zinc-100">
-                      {item.char === ' ' ? '␣ Space' : item.char}
-                    </kbd>
-                    <span className="text-[10px] text-rose-400 font-normal">({item.count}× miss)</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Harsh Technical Diagnostics Audits (Zero-Tolerance Keystroke Precision) */}
-          {results?.report?.harshDiagnostics && (
-            <div className="py-6 border-b border-zinc-800/80">
-              <div className="flex items-center gap-2 mb-3">
-                <ShieldAlert className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
-                  Harsh Diagnostic Audits (Zero-Tolerance Typing Benchmark)
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {results.report.harshDiagnostics.map((diag, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3.5 rounded-2xl border text-xs ${
-                      diag.severity === 'critical'
-                        ? 'bg-rose-950/20 border-rose-500/40 text-rose-200'
-                        : diag.severity === 'warning'
-                        ? 'bg-amber-950/20 border-amber-500/40 text-amber-200'
-                        : 'bg-emerald-950/20 border-emerald-500/40 text-emerald-200'
-                    }`}
-                  >
-                    <div className="font-bold font-mono mb-1.5 flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${
-                        diag.severity === 'critical' ? 'bg-rose-400' : diag.severity === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
-                      }`} />
-                      <span>{diag.title}</span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-zinc-300 font-sans">
-                      {diag.description}
-                    </p>
+                {/* Stat Pill Rows */}
+                <div className="space-y-2">
+                  <div className="bg-[#1c1e22] hover:bg-[#23262c] border border-neutral-800/80 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm transition-all">
+                    <span className="text-neutral-300 font-medium">Raw WPM</span>
+                    <span className="font-mono font-bold text-neutral-100">{results?.rawWpm}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Secondary Stats Strip: High-Precision Physics */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 py-6 border-b border-zinc-800/80 text-xs font-mono">
-            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Keystroke Accounting</span>
-              <span className="text-emerald-400 font-bold">{results?.correctChars}</span> correct
-              <span className="text-zinc-600 mx-1.5">/</span>
-              <span className="text-rose-400 font-bold">{results?.incorrectChars}</span> uncorrected
-              <div className="text-[10px] text-zinc-500 mt-1">
-                +{results?.correctedErrors || 0} corrected via Backspace
+                  <div className="bg-[#1c1e22] hover:bg-[#23262c] border border-neutral-800/80 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm transition-all">
+                    <span className="text-neutral-300 font-medium">Accuracy</span>
+                    <span className="font-mono font-bold text-neutral-100">
+                      {typeof results?.accuracy === 'number' ? `${results.accuracy.toFixed(1)}%` : `${results?.accuracy}%`}
+                    </span>
+                  </div>
+
+                  <div className="bg-[#1c1e22] hover:bg-[#23262c] border border-neutral-800/80 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm transition-all">
+                    <span className="text-neutral-300 font-medium">Correct Characters</span>
+                    <span className="font-mono font-bold text-neutral-100">{results?.correctChars}</span>
+                  </div>
+
+                  <div className="bg-[#1c1e22] hover:bg-[#23262c] border border-neutral-800/80 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm transition-all">
+                    <span className="text-neutral-300 font-medium">Incorrect Characters</span>
+                    <span className="font-mono font-bold text-neutral-100">{results?.incorrectChars}</span>
+                  </div>
+
+                  <div className="bg-[#1c1e22] hover:bg-[#23262c] border border-neutral-800/80 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm transition-all">
+                    <span className="text-neutral-300 font-medium">Consistency</span>
+                    <span className="font-mono font-bold text-neutral-100">{results?.consistency}%</span>
+                  </div>
+                </div>
+
+                {/* Share Test Button (Featured prominently as in visual reference) */}
+                <button
+                  type="button"
+                  onClick={handleShareTest}
+                  className="w-full mt-4 py-3 px-5 rounded-xl bg-[#202227] hover:bg-[#2a2d34] text-neutral-100 border border-neutral-700/60 font-medium text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition active:scale-95 shadow-md"
+                >
+                  {copiedShare ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span className="text-emerald-300 font-semibold">Report Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-neutral-400" />
+                      <span>Share test</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Quick Restart & Navigation Bar */}
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={resetTest}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold transition active:scale-95 cursor-pointer shadow-md"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Restart test (Tab+Enter)</span>
+                  </button>
+
+                  <a
+                    href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}&diff=${difficulty}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700/60 transition cursor-pointer"
+                    title="Open Zen Focus Mode"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </a>
+
+                  <Link
+                    href="/profile"
+                    className="p-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700/60 transition cursor-pointer"
+                    title="Profile Growth Analytics"
+                  >
+                    <TrendingUp className="w-4 h-4 text-amber-400" />
+                  </Link>
+                </div>
+
               </div>
+
+              {/* Right Column: Parameters Matrix (Every Button is 100% Functional) */}
+              <div className="lg:col-span-7 flex flex-col justify-between space-y-3.5 pt-1 lg:pt-0">
+                
+                {/* 1. Test Duration */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Test Duration</span>
+                  <div className="flex items-center gap-1 font-mono text-xs">
+                    {[
+                      { label: '0:10', sec: 10, mode: 'time' },
+                      { label: '0:30', sec: 30, mode: 'time' },
+                      { label: '1:00', sec: 60, mode: 'time' },
+                      { label: '2:00', sec: 120, mode: 'time' },
+                      { label: '5:00', sec: 300, mode: 'time' },
+                      { label: '∞', sec: 0, mode: 'unlimited' },
+                    ].map((opt) => {
+                      const isActive =
+                        opt.mode === 'unlimited'
+                          ? mode === 'unlimited'
+                          : mode === 'time' && duration === opt.sec;
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => {
+                            if (opt.mode === 'unlimited') {
+                              setMode('unlimited');
+                            } else {
+                              setMode('time');
+                              setDuration(opt.sec);
+                            }
+                            resetTest();
+                          }}
+                          className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                              : 'text-neutral-400 hover:text-white'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Highlight Style */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Highlight Style</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    {(['character', 'word', 'caret'] as const).map((style) => (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() => setHighlightStyle(style)}
+                        className={`px-3 py-1 rounded-full capitalize transition-all cursor-pointer ${
+                          highlightStyle === style
+                            ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                            : 'text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {style}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Highlight Input on Error */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Highlight Input on Error</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setHighlightInputOnError(true)}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        highlightInputOnError
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      On
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHighlightInputOnError(false)}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        !highlightInputOnError
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Off
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Words List */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Words List</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDifficulty('easy');
+                        resetTest();
+                      }}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        difficulty === 'easy'
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Simple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDifficulty('hard');
+                        resetTest();
+                      }}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        difficulty === 'hard' || difficulty === 'medium'
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Advanced
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. Punctuation */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Punctuation</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasPunctuation(true);
+                        resetTest();
+                      }}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        hasPunctuation
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      On
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasPunctuation(false);
+                        resetTest();
+                      }}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        !hasPunctuation
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Off
+                    </button>
+                  </div>
+                </div>
+
+                {/* 6. Numbers */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Numbers</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasNumbers(true);
+                        resetTest();
+                      }}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        hasNumbers
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      On
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasNumbers(false);
+                        resetTest();
+                      }}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        !hasNumbers
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Off
+                    </button>
+                  </div>
+                </div>
+
+                {/* 7. Show WPM */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1 border-b border-neutral-800/40">
+                  <span className="text-neutral-300 font-medium">Show WPM</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setHideLiveWpm(false)}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        !hideLiveWpm
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Show
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHideLiveWpm(true)}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        hideLiveWpm
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Hide
+                    </button>
+                  </div>
+                </div>
+
+                {/* 8. Show Timer */}
+                <div className="flex items-center justify-between text-xs sm:text-sm py-1">
+                  <span className="text-neutral-300 font-medium">Show Timer</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setShowTimer(true)}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        showTimer
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Show
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowTimer(false)}
+                      className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                        !showTimer
+                          ? 'bg-neutral-200 text-neutral-900 font-bold shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Hide
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">High-Precision Time</span>
-              <span className="text-zinc-200 font-bold text-sm">
-                {results?.exactSeconds ? results.exactSeconds.toFixed(2) : results?.timeSpent}s
-              </span>
-              <div className="text-[10px] text-zinc-500 mt-1">
-                sub-millisecond performance.now()
-              </div>
-            </div>
+            {/* Bottom Full-Width Spline Graph with Red × Errors */}
+            {chartData && (
+              <div className="w-full pt-4 border-t border-neutral-800/80 relative">
+                
+                {/* Graph Legend & Live Inspection */}
+                <div className="flex items-center justify-between mb-2 text-xs font-mono">
+                  <div className="flex items-center gap-4 text-[11px]">
+                    <span className="flex items-center gap-1.5 text-sky-400 font-semibold">
+                      <span className="w-3 h-0.5 bg-sky-400 inline-block rounded-full" /> Net WPM
+                    </span>
+                    <span className="flex items-center gap-1.5 text-neutral-400">
+                      <span className="w-3 h-0.5 bg-neutral-500 inline-block rounded-full" /> Raw Velocity
+                    </span>
+                    {chartData.errorPoints.length > 0 && (
+                      <span className="flex items-center gap-1 text-rose-400">
+                        <span className="font-bold">×</span> {chartData.errorPoints.length} typos marked
+                      </span>
+                    )}
+                  </div>
+                  
+                  {hoveredChartIndex !== null && chartData.pts[hoveredChartIndex] && (
+                    <div className="text-[11px] text-neutral-300 bg-neutral-800/80 px-2.5 py-0.5 rounded-md border border-neutral-700/60">
+                      t={chartData.pts[hoveredChartIndex].pt.second}s • Net: {chartData.pts[hoveredChartIndex].pt.wpm} • Raw: {chartData.pts[hoveredChartIndex].pt.rawWpm}
+                    </div>
+                  )}
+                </div>
 
-            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Actuation Dynamics</span>
-              <span className="text-amber-400 font-bold">{results?.kps || 0} KPS</span>
-              <span className="text-zinc-600 mx-1">•</span>
-              <span className="text-zinc-300 font-bold">{results?.msPerKey || 0}ms</span>
-              <div className="text-[10px] text-zinc-500 mt-1">
-                Efficiency: {results?.efficiency || 100}%
-              </div>
-            </div>
+                {/* SVG Spline Canvas */}
+                <div className="w-full h-44 sm:h-52 bg-[#0d0e11] rounded-2xl border border-neutral-800/70 p-2 relative overflow-hidden">
+                  <svg
+                    className="w-full h-full overflow-visible select-none"
+                    viewBox={`0 0 ${chartData.svgWidth} ${chartData.svgHeight}`}
+                    preserveAspectRatio="none"
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const mouseX = ((e.clientX - rect.left) / rect.width) * chartData.svgWidth;
+                      let closestIdx = 0;
+                      let minDist = Infinity;
+                      chartData.pts.forEach((p, idx) => {
+                        const dist = Math.abs(p.x - mouseX);
+                        if (dist < minDist) {
+                          minDist = dist;
+                          closestIdx = idx;
+                        }
+                      });
+                      setHoveredChartIndex(closestIdx);
+                    }}
+                    onMouseLeave={() => setHoveredChartIndex(null)}
+                  >
+                    <defs>
+                      <linearGradient id="splineBlueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
 
-            <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-              <span className="text-zinc-400 block text-[11px] mb-1">Correction Friction</span>
-              <span className="text-zinc-200 font-bold">{results?.backspaceCount || 0}</span> backspaces
-              <div className="text-[10px] text-zinc-500 mt-1">
-                {results?.totalErrorsCommitted || 0} total misstrikes committed
-              </div>
-            </div>
-          </div>
+                    {/* Vertical Subtle Grid Lines */}
+                    {[0.15, 0.3, 0.45, 0.6, 0.75, 0.9].map((frac, idx) => {
+                      const gx = chartData.padL + frac * chartData.plotW;
+                      return (
+                        <line
+                          key={idx}
+                          x1={gx}
+                          y1={chartData.padT}
+                          x2={gx}
+                          y2={chartData.padT + chartData.plotH}
+                          stroke="#202227"
+                          strokeWidth="1"
+                          strokeDasharray="3 3"
+                        />
+                      );
+                    })}
 
-          {/* High-Definition Progression Chart */}
-          {results?.history && results.history.length > 1 && (
-            <div className="py-6 border-b border-zinc-800/80">
-              <div className="flex items-center justify-between mb-3 text-xs font-mono">
-                <span className="font-semibold text-zinc-300">WPM Velocity & Errors Over Time</span>
-                <div className="flex items-center gap-4 text-[11px]">
-                  <span className="flex items-center gap-1.5 text-amber-400">
-                    <span className="w-3 h-0.5 bg-amber-400 inline-block rounded-full" /> Net WPM
-                  </span>
-                  <span className="flex items-center gap-1.5 text-zinc-400">
-                    <span className="w-3 h-0.5 border-b border-dashed border-zinc-400 inline-block" /> Raw WPM
-                  </span>
+                    {/* Horizontal Guideline Grids */}
+                    {[0.25, 0.5, 0.75].map((frac, idx) => {
+                      const gy = chartData.padT + chartData.plotH - frac * chartData.plotH;
+                      return (
+                        <line
+                          key={idx}
+                          x1={chartData.padL}
+                          y1={gy}
+                          x2={chartData.padL + chartData.plotW}
+                          y2={gy}
+                          stroke="#1c1e22"
+                          strokeWidth="1"
+                        />
+                      );
+                    })}
+
+                    {/* Right-side Y-Axis Ticks (as seen in visual reference) */}
+                    {[1, 0.75, 0.5, 0.25].map((frac, idx) => {
+                      const gy = chartData.padT + chartData.plotH - frac * chartData.plotH;
+                      return (
+                        <text
+                          key={idx}
+                          x={chartData.svgWidth - 45}
+                          y={gy + 4}
+                          fill="#52525b"
+                          fontSize="11"
+                          fontFamily="monospace"
+                        >
+                          {Math.round(chartData.maxY * frac)}
+                        </text>
+                      );
+                    })}
+
+                    {/* Area fill under Net WPM curve */}
+                    {chartData.pts.length > 1 && (
+                      <path
+                        d={`${chartData.netSpline} L ${chartData.pts[chartData.pts.length - 1].x} ${chartData.padT + chartData.plotH} L ${chartData.pts[0].x} ${chartData.padT + chartData.plotH} Z`}
+                        fill="url(#splineBlueGradient)"
+                      />
+                    )}
+
+                    {/* Raw Velocity Spline Curve (Dark Gray, undulating) */}
+                    <path
+                      d={chartData.rawSpline}
+                      fill="none"
+                      stroke="#4b5563"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Net WPM Spline Curve (Vibrant Sky Blue) */}
+                    <path
+                      d={chartData.netSpline}
+                      fill="none"
+                      stroke="#38bdf8"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Net WPM Data Point Dots */}
+                    {chartData.pts.map((p, idx) => (
+                      <circle
+                        key={idx}
+                        cx={p.x}
+                        cy={p.y}
+                        r={hoveredChartIndex === idx ? 4.5 : 2}
+                        fill="#38bdf8"
+                      />
+                    ))}
+
+                    {/* RED × ERROR MARKERS at exact typo timestamps (Matching screenshot reference) */}
+                    {chartData.errorPoints.map((ep, idx) => (
+                      <g key={idx} className="cursor-pointer">
+                        <title>Misstroke at {ep.sec}s</title>
+                        <text
+                          x={ep.x}
+                          y={ep.y}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fill="#ef4444"
+                          fontSize="14"
+                          fontWeight="bold"
+                        >
+                          ×
+                        </text>
+                      </g>
+                    ))}
+
+                    {/* Hover Vertical Guide Indicator */}
+                    {hoveredChartIndex !== null && chartData.pts[hoveredChartIndex] && (
+                      <>
+                        <line
+                          x1={chartData.pts[hoveredChartIndex].x}
+                          y1={chartData.padT}
+                          x2={chartData.pts[hoveredChartIndex].x}
+                          y2={chartData.padT + chartData.plotH}
+                          stroke="#38bdf8"
+                          strokeWidth="1.5"
+                          strokeDasharray="2 2"
+                        />
+                        <circle
+                          cx={chartData.pts[hoveredChartIndex].x}
+                          cy={chartData.pts[hoveredChartIndex].y}
+                          r="5"
+                          fill="#38bdf8"
+                        />
+                        {chartData.rawPts[hoveredChartIndex] && (
+                          <circle
+                            cx={chartData.rawPts[hoveredChartIndex].x}
+                            cy={chartData.rawPts[hoveredChartIndex].y}
+                            r="4"
+                            fill="#9ca3af"
+                          />
+                        )}
+                      </>
+                    )}
+                  </svg>
                 </div>
               </div>
+            )}
 
-              {/* Chart SVG with smooth area gradient fill */}
-              <div className="w-full h-36 bg-zinc-950/80 rounded-2xl border border-zinc-800/80 p-3 flex items-end relative overflow-hidden">
-                <svg
-                  className="w-full h-full overflow-visible"
-                  viewBox={`0 0 ${Math.max(10, results.history.length - 1)} 100`}
-                  preserveAspectRatio="none"
-                >
-                  <defs>
-                    <linearGradient id="wpmGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
+          </div>
 
-                  {/* Horizontal Guideline Grids */}
-                  <line x1="0" y1="25" x2={results.history.length} y2="25" stroke="#27272a" strokeDasharray="3" />
-                  <line x1="0" y1="50" x2={results.history.length} y2="50" stroke="#27272a" strokeDasharray="3" />
-                  <line x1="0" y1="75" x2={results.history.length} y2="75" stroke="#27272a" strokeDasharray="3" />
-
-                  {/* Gradient Area Fill under Net WPM */}
-                  <polygon
-                    fill="url(#wpmGradient)"
-                    points={`0,100 ${results.history.map((h, i) => `${i},${100 - Math.min(100, (h.wpm / 140) * 100)}`).join(' ')} ${results.history.length - 1},100`}
-                  />
-
-                  {/* Raw WPM Dashed Polyline */}
-                  <polyline
-                    fill="none"
-                    stroke="#71717a"
-                    strokeWidth="1.5"
-                    strokeDasharray="3"
-                    points={results.history.map((h, i) => `${i},${100 - Math.min(100, (h.rawWpm / 140) * 100)}`).join(' ')}
-                  />
-
-                  {/* Net WPM Solid Line */}
-                  <polyline
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={results.history.map((h, i) => `${i},${100 - Math.min(100, (h.wpm / 140) * 100)}`).join(' ')}
-                  />
-                </svg>
-              </div>
-            </div>
-          )}
-
-          {/* Scorecard Action Buttons */}
-          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          {/* Collapsible / Expandable Detailed Acoustic & Diagnostics Tray */}
+          <div className="w-full rounded-2xl bg-zinc-900/60 border border-zinc-800/80 p-5 backdrop-blur-md">
             
-            <button
-              type="button"
-              onClick={resetTest}
-              className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold tracking-wide shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Next Test (Tab + Enter)</span>
-            </button>
-
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/70">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-zinc-200">
+                  Acoustic & Friction Diagnostics
+                </h3>
+              </div>
               <button
                 type="button"
-                onClick={copyScore}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95 cursor-pointer"
+                onClick={() => setShowDiagnosticsDetail(!showDiagnosticsDetail)}
+                className="text-xs font-mono text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
-                <span>{copied ? 'Scorecard Copied!' : 'Copy Score'}</span>
+                {showDiagnosticsDetail ? 'Hide Details ▲' : 'Show Details ▼'}
               </button>
-
-              <a
-                href={`/focus?duration=${mode === 'time' ? duration : 0}&pack=${activePack}&diff=${difficulty}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all active:scale-95 cursor-pointer"
-              >
-                <Maximize2 className="w-4 h-4 text-amber-400" />
-                <span>Focus Mode</span>
-              </a>
-
-              <Link
-                href="/profile"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold tracking-wide border border-amber-500/40 shadow-sm transition-all cursor-pointer"
-              >
-                <TrendingUp className="w-4 h-4 text-amber-400" />
-                <span>Profile & Growth →</span>
-              </Link>
-
-              <Link
-                href="/sounds"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold tracking-wide border border-zinc-700/60 shadow-md transition-all cursor-pointer"
-              >
-                <Layers className="w-4 h-4 text-sky-400" />
-                <span>Sound Studio</span>
-              </Link>
             </div>
 
+            {showDiagnosticsDetail && (
+              <div className="pt-4 space-y-5 animate-in fade-in duration-150">
+                
+                {/* Active Switch Personality Card & Projection */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-zinc-950/70 border border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                      style={{ backgroundColor: `${currentProfile?.color}20`, border: `1px solid ${currentProfile?.color}40` }}
+                    >
+                      <SwitchIcon
+                        id={results?.soundPack || activePack}
+                        className="w-5 h-5"
+                        style={{ color: currentProfile?.color }}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                        <span>{currentProfile?.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${currentProfile?.badgeBg}`}>
+                          {currentProfile?.category}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-zinc-400">
+                        {currentProfile?.pitch} Pitch • {currentProfile?.loudness}
+                      </div>
+                    </div>
+                  </div>
+
+                  {results?.report && (
+                    <div className="text-left sm:text-right">
+                      <div className="text-[11px] font-mono text-amber-400 font-bold">
+                        Target Capacity: {results.report.projectedWpmMin} – {results.report.projectedWpmMax} WPM
+                      </div>
+                      <div className="text-xs text-zinc-300 mt-0.5">
+                        {results.report.potentialHeadline}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Problem Keys */}
+                {results?.troubleKeys && results.troubleKeys.length > 0 && (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono p-3 rounded-xl bg-rose-950/20 border border-rose-900/30">
+                    <span className="font-semibold text-rose-300">High-Friction Misstrokes:</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {results.troubleKeys.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-200 text-xs font-bold flex items-center gap-1"
+                        >
+                          <kbd className="px-1 rounded bg-zinc-900 border border-rose-500/40 text-zinc-100">
+                            {item.char === ' ' ? '␣ Space' : item.char}
+                          </kbd>
+                          <span className="text-[10px] text-rose-400">({item.count}×)</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Harsh Diagnostic Audit Cards */}
+                {results?.report?.harshDiagnostics && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {results.report.harshDiagnostics.map((diag, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-xl border text-xs ${
+                          diag.severity === 'critical'
+                            ? 'bg-rose-950/20 border-rose-500/40 text-rose-200'
+                            : diag.severity === 'warning'
+                            ? 'bg-amber-950/20 border-amber-500/40 text-amber-200'
+                            : 'bg-emerald-950/20 border-emerald-500/40 text-emerald-200'
+                        }`}
+                      >
+                        <div className="font-bold font-mono mb-1 flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${
+                            diag.severity === 'critical' ? 'bg-rose-400' : diag.severity === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
+                          }`} />
+                          <span>{diag.title}</span>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-zinc-300 font-sans">
+                          {diag.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Sub-Millisecond Physics Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-400 block text-[10px] mb-0.5">Sub-ms Time</span>
+                    <span className="text-zinc-200 font-bold">
+                      {results?.exactSeconds ? results.exactSeconds.toFixed(2) : results?.timeSpent}s
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-400 block text-[10px] mb-0.5">Actuation Speed</span>
+                    <span className="text-amber-400 font-bold">{results?.kps || 0} KPS</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-400 block text-[10px] mb-0.5">Latency per Key</span>
+                    <span className="text-zinc-200 font-bold">{results?.msPerKey || 0}ms</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <span className="text-zinc-400 block text-[10px] mb-0.5">Backspaces</span>
+                    <span className="text-zinc-200 font-bold">{results?.backspaceCount || 0}</span>
+                  </div>
+                </div>
+
+              </div>
+            )}
           </div>
 
         </div>

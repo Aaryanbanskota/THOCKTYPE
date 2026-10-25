@@ -1,5 +1,5 @@
 # THOCKTYPE robots.txt
-# https://thocktype.com
+# https://thocktype.vercel.app
 
 User-agent: *
 Allow: /
@@ -70,4 +70,4 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /sitemap.xml
 
-Sitemap: https://thocktype.com/sitemap.xml
+Sitemap: https://thocktype.vercel.app/sitemap.xml

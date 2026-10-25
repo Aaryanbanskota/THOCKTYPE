@@ -88,5 +88,6 @@ export interface TestResults {
   troubleKeys: TroubleKey[];
   soundPack: SoundPackId;
   history: WpmDataPoint[];
+  errorTimestamps?: number[];
   report: BenchmarkReport;
 }

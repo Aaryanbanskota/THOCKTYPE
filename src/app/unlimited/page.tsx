@@ -20,7 +20,7 @@ import {
 const pageTitle = 'Unlimited Typing Test — Type for Unlimited Time Without Limits';
 const pageDescription =
   'The best free online typing site where you can type for unlimited time. Practice typing endlessly with infinite word streaming, zero countdown timer, authentic mechanical keyboard sounds, and zero signup.';
-const canonicalUrl = 'https://thocktype.com/unlimited';
+const canonicalUrl = 'https://thocktype.vercel.app/unlimited';
 
 export const metadata: Metadata = {
   title: pageTitle,

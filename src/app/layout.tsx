@@ -24,7 +24,7 @@ export const viewport: Viewport = {
   themeColor: '#121314',
 };
 
-const baseUrl = 'https://thocktype.com';
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thocktype.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),

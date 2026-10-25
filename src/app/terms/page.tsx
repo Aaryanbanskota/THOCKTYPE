@@ -4,7 +4,10 @@ import { FileText, CheckCircle, AlertTriangle, Scale } from 'lucide-react';
 
 export const metadata = {
   title: 'Terms of Service | THOCKTYPE',
-  description: 'ThockType terms of service and acceptable usage guidelines.'
+  description: 'ThockType terms of service and acceptable usage guidelines.',
+  alternates: {
+    canonical: 'https://thocktype.vercel.app/terms',
+  },
 };
 
 export default function TermsPage() {
