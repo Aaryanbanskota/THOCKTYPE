@@ -28,7 +28,7 @@ export interface SoundEngineOptions {
 }
 
 export interface TestSettings {
-  mode: 'time' | 'words' | 'unlimited';
+  mode: 'time' | 'words' | 'unlimited' | 'custom';
   duration: 15 | 30 | 60 | 90;
   wordCount: 25 | 50 | 100;
   difficulty: DifficultyMode;

@@ -617,9 +617,12 @@ function FocusModeContent() {
 
         {/* Minimal Timer strictly centered at top */}
         <div className="flex flex-col items-center relative z-30">
-          <span className="font-mono text-2xl xs:text-3xl sm:text-4xl font-bold text-amber-400 tracking-tight">
-            {timeLeft}s
-          </span>
+          <div className="flex items-center gap-1.5 text-amber-400">
+            {isUnlimited && <span className="font-mono text-xl sm:text-2xl font-bold text-amber-400/80">∞</span>}
+            <span className="font-mono text-2xl xs:text-3xl sm:text-4xl font-bold tracking-tight">
+              {timeLeft}s
+            </span>
+          </div>
           {isStarted && !isFinished && (
             <button
               type="button"

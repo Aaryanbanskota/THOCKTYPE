@@ -81,6 +81,74 @@ const HARD_PATTERNS = [
   'travel_distance = 3.6mm ~ 4.0mm;'
 ];
 
+export interface PresetPassage {
+  id: string;
+  title: string;
+  category: 'Classic Literature' | 'Philosophy & Science' | 'Coding Drill' | 'Speed Drill';
+  text: string;
+}
+
+export const PRESET_PASSAGES: PresetPassage[] = [
+  {
+    id: 'pale-blue-dot',
+    title: 'Pale Blue Dot',
+    category: 'Philosophy & Science',
+    text: 'Look again at that dot. That is here. That is home. That is us. On it everyone you love, everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives.',
+  },
+  {
+    id: 'matrix-choice',
+    title: 'The Red Pill',
+    category: 'Philosophy & Science',
+    text: 'You take the blue pill, the story ends, you wake up in your bed and believe whatever you want to believe. You take the red pill, you stay in Wonderland, and I show you how deep the rabbit hole goes.',
+  },
+  {
+    id: 'speed-pangram',
+    title: 'Keyboard Pangrams',
+    category: 'Speed Drill',
+    text: 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! Bright vixens jump; dozy fowl quack.',
+  },
+  {
+    id: 'javascript-async',
+    title: 'JavaScript Async Loop',
+    category: 'Coding Drill',
+    text: 'async function fetchKeystrokeCadence(samples) { const results = await Promise.all(samples.map(s => s.measure())); return results.filter(r => r.valid); }',
+  },
+  {
+    id: 'old-man-sea',
+    title: 'The Old Man and the Sea',
+    category: 'Classic Literature',
+    text: 'He was an old man who fished alone in a skiff in the Gulf Stream and he had gone eighty-four days now without taking a fish. In the first forty days a boy had been with him.',
+  },
+  {
+    id: 'thock-manifesto',
+    title: 'The Mechanical Keyboard Ode',
+    category: 'Speed Drill',
+    text: 'There is a rhythm to the striking of mechanical keys, an acoustic dialogue between the fingertips and the coiled springs. Every actuation is a tactile confirmation of intent.',
+  },
+];
+
+/**
+ * Clean and normalize custom text pasted by the user.
+ */
+export function sanitizeCustomText(raw: string): string[] {
+  if (!raw || !raw.trim()) {
+    return COMMON_WORDS.slice(0, 50);
+  }
+
+  // Normalize quotes and hyphens
+  const normalized = raw
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\r\n/g, ' ')
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const words = normalized.split(' ').filter((w) => w.length > 0);
+  return words.length > 0 ? words : COMMON_WORDS.slice(0, 50);
+}
+
 /**
  * Generate typing word array based on chosen difficulty.
  */

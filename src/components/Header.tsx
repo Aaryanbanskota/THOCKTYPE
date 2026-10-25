@@ -25,7 +25,8 @@ import {
   Trophy,
   TrendingUp,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  Infinity as InfinityIcon
 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 
@@ -151,6 +152,17 @@ export function Header() {
             >
               <Flame className="w-3.5 h-3.5" />
               <span>Typing Test</span>
+            </Link>
+            <Link
+              href="/unlimited"
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                pathname === '/unlimited'
+                  ? 'bg-zinc-800/90 text-amber-400 font-semibold'
+                  : 'hover:text-zinc-200 hover:bg-zinc-900/60'
+              }`}
+            >
+              <InfinityIcon className="w-3.5 h-3.5 text-amber-400" />
+              <span>Unlimited</span>
             </Link>
             <Link
               href="/sounds"
@@ -505,6 +517,27 @@ export function Header() {
                   <div>
                     <div>Typing Speed Test</div>
                     <div className="text-[11px] font-normal text-zinc-400">Standard benchmark with diagnostics</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-zinc-500" />
+              </Link>
+
+              <Link
+                href="/unlimited"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center justify-between p-3.5 rounded-2xl border text-sm font-bold transition-all ${
+                  pathname === '/unlimited'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                    : 'bg-zinc-900/80 hover:bg-zinc-900 border-zinc-800/80 text-zinc-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400">
+                    <InfinityIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div>Unlimited Typing Mode</div>
+                    <div className="text-[11px] font-normal text-zinc-400">Endless stream, zero countdown</div>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-zinc-500" />

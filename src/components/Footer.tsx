@@ -117,7 +117,9 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <Link href="/test" className="hover:text-zinc-300">Typing Test</Link>
             <span>•</span>
-            <Link href="/profile" className="text-amber-400 hover:text-amber-300 font-medium">My Profile & Growth</Link>
+            <Link href="/unlimited" className="text-amber-400 hover:text-amber-300 font-medium">Unlimited Mode (∞)</Link>
+            <span>•</span>
+            <Link href="/profile" className="text-zinc-400 hover:text-zinc-300 font-medium">My Profile & Growth</Link>
             <span>•</span>
             <Link href="/sounds" className="hover:text-zinc-300">Sound Lab</Link>
             <span>•</span>

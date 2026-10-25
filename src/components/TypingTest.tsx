@@ -17,6 +17,7 @@ import {
   ExternalLink,
   Square,
   Volume2,
+  VolumeX,
   Zap,
   TrendingUp,
   Target,
@@ -27,22 +28,58 @@ import {
   Command,
   SignalLow,
   SignalMedium,
-  SignalHigh
+  SignalHigh,
+  FileText,
+  Eye,
+  EyeOff,
+  Type,
+  ChevronDown,
+  X,
+  Play,
+  Sliders
 } from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
+import { PRESET_PASSAGES, sanitizeCustomText, PresetPassage } from '@/lib/word-banks';
 
-type TestMode = 'time' | 'words' | 'unlimited';
+export type TestMode = 'time' | 'words' | 'unlimited' | 'custom';
 
-export function TypingTest() {
-  const { activePack, setActivePack, playKey, releaseKey } = useSound();
+export interface TypingTestProps {
+  initialMode?: TestMode;
+}
+
+export function TypingTest({ initialMode = 'time' }: TypingTestProps) {
+  const {
+    activePack,
+    setActivePack,
+    playKey,
+    releaseKey,
+    volume,
+    setVolume,
+    isMuted,
+    toggleMute
+  } = useSound();
 
   // Test Settings
-  const [mode, setMode] = useState<TestMode>('time');
+  const [mode, setMode] = useState<TestMode>(initialMode);
   const [duration, setDuration] = useState<number>(60); // 15, 30, 60, 90
   const [wordTarget, setWordTarget] = useState<number>(50); // 25, 50, 100
   const [difficulty, setDifficulty] = useState<DifficultyMode>('easy'); // easy, medium, hard
   const [competitive, setCompetitive] = useState<boolean>(false);
+
+  // Custom Text Mode State
+  const [customWords, setCustomWords] = useState<string[]>([]);
+  const [customRawInput, setCustomRawInput] = useState<string>('');
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
+
+  // User Experience Settings
+  const [hideLiveWpm, setHideLiveWpm] = useState<boolean>(false);
+  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>('md');
+  const [isSwitchPickerOpen, setIsSwitchPickerOpen] = useState<boolean>(false);
+  const [isVolumePickerOpen, setIsVolumePickerOpen] = useState<boolean>(false);
+
+  const switchPickerRef = useRef<HTMLDivElement | null>(null);
+  const volumePickerRef = useRef<HTMLDivElement | null>(null);
 
   // Words & Text State
   const [words, setWords] = useState<string[]>(() => COMMON_WORDS.slice(0, 70));
@@ -55,7 +92,7 @@ export function TypingTest() {
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
 
   // Timer & Metrics State
-  const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [timeLeft, setTimeLeft] = useState<number>(initialMode === 'unlimited' ? 0 : 60);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [wpm, setWpm] = useState<number>(0);
   const [rawWpm, setRawWpm] = useState<number>(0);
@@ -87,6 +124,18 @@ export function TypingTest() {
 
   // Initialize word list
   const initWords = useCallback(() => {
+    if (mode === 'custom') {
+      if (customWords.length > 0) {
+        setWords(customWords);
+        return;
+      } else {
+        const defaultPreset = sanitizeCustomText(PRESET_PASSAGES[0].text);
+        setCustomWords(defaultPreset);
+        setWords(defaultPreset);
+        return;
+      }
+    }
+
     let wordCount = 70;
     if (mode === 'words') {
       wordCount = wordTarget;
@@ -97,7 +146,21 @@ export function TypingTest() {
     }
     const newWords = generateTextByDifficulty(difficulty, wordCount);
     setWords(newWords);
-  }, [mode, duration, wordTarget, difficulty]);
+  }, [mode, duration, wordTarget, difficulty, customWords]);
+
+  // Close toolbar menus on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (switchPickerRef.current && !switchPickerRef.current.contains(event.target as Node)) {
+        setIsSwitchPickerOpen(false);
+      }
+      if (volumePickerRef.current && !volumePickerRef.current.contains(event.target as Node)) {
+        setIsVolumePickerOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Reset test to clean initial state
   const resetTest = useCallback(() => {
@@ -136,10 +199,10 @@ export function TypingTest() {
     }, 40);
   }, [mode, duration, initWords]);
 
-  // Initial load
+  // Initial focus
   useEffect(() => {
-    resetTest();
-  }, [resetTest]);
+    inputRef.current?.focus();
+  }, []);
 
   // Global restart event listener from shortcuts manager (Tab+Enter, Shift+Enter)
   useEffect(() => {
@@ -417,8 +480,8 @@ export function TypingTest() {
       setWords((prev) => [...prev, ...generateTextByDifficulty(difficulty, 60)]);
     }
 
-    // In words mode: finish when target reached
-    if (mode === 'words' && val.length >= fullText.length) {
+    // In words or custom mode: finish when target reached
+    if ((mode === 'words' || mode === 'custom') && val.length >= fullText.length) {
       finishTest(val, currentExactElapsed);
     }
   };
@@ -593,12 +656,12 @@ Benchmark verified: ${window.location.origin}`;
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center overflow-x-hidden px-1 sm:px-0">
       
-      {/* Test Config Toolbar (Mode, Time / Words, Sound Switcher & Focus Mode CTA) */}
+      {/* Test Config Toolbar (Mode, Time / Words / Unlimited / Custom, Settings, Switch Picker & Volume) */}
       <div className="w-full max-w-full flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3 mb-6 sm:mb-8 bg-zinc-900/60 p-2 sm:p-2.5 rounded-2xl border border-zinc-800/80 backdrop-blur-sm">
         
         {/* Left Section: Mode Selector + Sub-options */}
         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
-          {/* Mode Selector (Time, Words, Unlimited) */}
+          {/* Mode Selector (Time, Words, Unlimited, Custom) */}
           <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
             <button
               type="button"
@@ -625,17 +688,36 @@ Benchmark verified: ${window.location.origin}`;
             <button
               type="button"
               onClick={() => { setMode('unlimited'); resetTest(); }}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                 mode === 'unlimited'
                   ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              unlimited
+              <span>unlimited</span>
+              <span className="text-[10px] text-amber-400/80">∞</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('custom');
+                if (customWords.length === 0) {
+                  setIsCustomModalOpen(true);
+                } else {
+                  resetTest();
+                }
+              }}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                mode === 'custom'
+                  ? 'bg-zinc-800 text-amber-400 font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              custom
             </button>
           </div>
 
-          {/* Sub-options for Time / Words */}
+          {/* Sub-options for Time / Words / Custom */}
           {mode === 'time' && (
             <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
               {[15, 30, 60, 90].map((sec) => (
@@ -673,11 +755,30 @@ Benchmark verified: ${window.location.origin}`;
               ))}
             </div>
           )}
+
+          {mode === 'unlimited' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>Endless Stream</span>
+            </div>
+          )}
+
+          {mode === 'custom' && (
+            <button
+              type="button"
+              onClick={() => setIsCustomModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 text-xs font-mono cursor-pointer transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5 text-amber-400" />
+              <span>Change Text / Presets</span>
+            </button>
+          )}
         </div>
 
-        {/* Right Section: Difficulty Mode, Switch Icon (compact, no text), Zen Focus */}
+        {/* Right Section: Difficulty, Live WPM Eye, Font Size, Switch Picker, Volume, Zen Focus */}
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-1.5 sm:gap-2">
-          {/* Difficulty Mode Selector: Small icon buttons (easy, medium, hard) */}
+          
+          {/* Difficulty Mode Selector */}
           <div className="flex items-center bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
             {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => {
               const isSelected = difficulty === d;
@@ -708,25 +809,136 @@ Benchmark verified: ${window.location.origin}`;
             })}
           </div>
 
-          {/* Active Sound Personality: Compact Icon Tile only (No text, as requested) */}
-          <button
-            type="button"
-            onClick={() => {
-              const currentIndex = PACK_IDS.indexOf(activePack);
-              const nextIndex = (currentIndex + 1) % PACK_IDS.length;
-              const nextPack = PACK_IDS[nextIndex];
-              setActivePack(nextPack);
-              playKey('KeyF', nextPack);
-            }}
-            className="w-8 h-8 rounded-xl bg-zinc-950/60 hover:bg-zinc-800/80 border border-zinc-800/60 flex items-center justify-center transition-all group cursor-pointer"
-            title={`Active switch: ${currentProfile?.name} (${currentProfile?.category}) — Click to cycle sound`}
-          >
-            <SwitchIcon
-              id={activePack}
-              className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110"
-              style={{ color: currentProfile?.color }}
-            />
-          </button>
+          {/* User Preferences: Hide Live WPM & Font Size */}
+          <div className="flex items-center gap-1 bg-zinc-950/60 p-1 rounded-xl border border-zinc-800/60 text-xs font-mono">
+            {/* Live WPM Toggle */}
+            <button
+              type="button"
+              onClick={() => setHideLiveWpm(!hideLiveWpm)}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                hideLiveWpm ? 'text-zinc-500 hover:text-zinc-300' : 'text-amber-400/90 hover:text-amber-300'
+              }`}
+              title={hideLiveWpm ? 'Live WPM is hidden (click to show)' : 'Hide Live WPM while typing (reduces anxiety)'}
+            >
+              {hideLiveWpm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Font Size Cycle */}
+            <button
+              type="button"
+              onClick={() => setFontSize(f => f === 'sm' ? 'md' : f === 'md' ? 'lg' : 'sm')}
+              className="px-1.5 py-0.5 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer flex items-center gap-0.5 text-[10px] font-mono font-bold"
+              title={`Text Size: ${fontSize.toUpperCase()} (Click to toggle)`}
+            >
+              <Type className="w-3 h-3 text-zinc-500" />
+              <span>{fontSize.toUpperCase()}</span>
+            </button>
+          </div>
+
+          {/* Switch Sound Picker Popover */}
+          <div className="relative" ref={switchPickerRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSwitchPickerOpen(!isSwitchPickerOpen);
+                setIsVolumePickerOpen(false);
+              }}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-zinc-950/60 hover:bg-zinc-800/80 border border-zinc-800/60 text-xs transition-all cursor-pointer group"
+              title={`Switch sound: ${currentProfile?.name} (${currentProfile?.category})`}
+            >
+              <SwitchIcon
+                id={activePack}
+                className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110"
+                style={{ color: currentProfile?.color }}
+              />
+              <ChevronDown className="w-3 h-3 text-zinc-500" />
+            </button>
+
+            {isSwitchPickerOpen && (
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-2 py-1 mb-1 border-b border-zinc-800 text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                  <span>Switch Sound</span>
+                  <span className="text-zinc-500">Alt+1..8</span>
+                </div>
+                <div className="space-y-1">
+                  {PACK_IDS.map((id) => {
+                    const p = SWITCH_PROFILES[id];
+                    const isSelected = activePack === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          setActivePack(id);
+                          playKey('KeyF', id);
+                          setIsSwitchPickerOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-zinc-800 text-zinc-100 font-semibold ring-1 ring-zinc-700'
+                            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <SwitchIcon id={id} className="w-3.5 h-3.5" style={{ color: p.color }} />
+                          <span className="text-xs">{p.name}</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-zinc-500">{p.pitch}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Volume Button & Slider */}
+          <div className="relative" ref={volumePickerRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsVolumePickerOpen(!isVolumePickerOpen);
+                setIsSwitchPickerOpen(false);
+              }}
+              className="w-8 h-8 rounded-xl bg-zinc-950/60 hover:bg-zinc-800/80 border border-zinc-800/60 flex items-center justify-center transition-all cursor-pointer"
+              title={isMuted ? 'Muted (click to adjust volume)' : `Volume: ${Math.round(volume * 100)}%`}
+            >
+              {isMuted || volume === 0 ? (
+                <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 text-zinc-300" />
+              )}
+            </button>
+
+            {isVolumePickerOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-zinc-400">Volume</span>
+                  <span className="text-amber-400 font-bold">{Math.round(volume * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    const newVol = parseFloat(e.target.value);
+                    setVolume(newVol);
+                    if (isMuted && newVol > 0) toggleMute();
+                  }}
+                  className="w-full accent-amber-500 cursor-pointer"
+                />
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  className="w-full py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-[11px] font-mono text-zinc-300 cursor-pointer"
+                >
+                  {isMuted ? 'Unmute Sound' : 'Mute Sound'}
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Zen Focus Mode Button */}
           <a
@@ -752,7 +964,7 @@ Benchmark verified: ${window.location.origin}`;
             WPM
           </span>
           <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
-            {wpm}
+            {hideLiveWpm && isStarted ? '•••' : wpm}
           </span>
         </div>
 
@@ -766,15 +978,39 @@ Benchmark verified: ${window.location.origin}`;
           </span>
         </div>
 
-        {/* Time */}
+        {/* Time / Progress */}
         <div className="flex flex-col items-center">
-          <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
-            Time
+          <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1 flex items-center gap-1">
+            {mode === 'unlimited' ? (
+              <span className="inline-flex items-center gap-1 text-amber-400">
+                <span>Time (∞)</span>
+              </span>
+            ) : mode === 'custom' ? (
+              <span>Progress</span>
+            ) : (
+              <span>Time</span>
+            )}
           </span>
           <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-amber-400 tracking-tight">
-            {mode === 'time' ? `${timeLeft}s` : `${elapsedSeconds}s`}
+            {mode === 'time'
+              ? `${timeLeft}s`
+              : mode === 'custom'
+              ? `${Math.min(100, Math.round((input.length / (fullText.length || 1)) * 100))}%`
+              : `${elapsedSeconds}s`}
           </span>
         </div>
+
+        {/* Extra Counter for Unlimited Mode: Words Typed */}
+        {mode === 'unlimited' && (
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] sm:text-xs font-mono font-medium tracking-widest uppercase text-zinc-400 mb-1">
+              Words
+            </span>
+            <span className="text-2xl xs:text-3xl sm:text-4xl font-mono font-bold text-emerald-400 tracking-tight">
+              {input.trim() ? input.trim().split(/\s+/).filter(Boolean).length : 0}
+            </span>
+          </div>
+        )}
 
       </div>
 
@@ -816,7 +1052,13 @@ Benchmark verified: ${window.location.origin}`;
           {/* Rendered Text with Caret and Character States */}
           <div
             ref={textContainerRef}
-            className="h-32 xs:h-36 sm:h-44 overflow-hidden font-mono text-lg xs:text-xl sm:text-2xl lg:text-[28px] leading-relaxed tracking-wide select-none text-zinc-400 pointer-events-none relative z-0"
+            className={`h-32 xs:h-36 sm:h-44 overflow-hidden font-mono leading-relaxed tracking-wide select-none text-zinc-400 pointer-events-none relative z-0 transition-all ${
+              fontSize === 'sm'
+                ? 'text-base xs:text-lg sm:text-xl'
+                : fontSize === 'lg'
+                ? 'text-xl xs:text-2xl sm:text-3xl lg:text-[32px]'
+                : 'text-lg xs:text-xl sm:text-2xl lg:text-[28px]'
+            }`}
           >
             {fullText.split('').map((char, index) => {
               const typedChar = input[index];
@@ -1281,6 +1523,98 @@ Benchmark verified: ${window.location.origin}`;
 
           </div>
 
+        </div>
+      )}
+
+      {/* Custom Text & Presets Practice Modal */}
+      {isCustomModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-xl rounded-3xl bg-zinc-900 border border-zinc-800 p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-bold text-zinc-100">Custom Text & Presets</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCustomModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Paste your own article, essay, code, or select from curated literature drills to practice with mechanical keyboard acoustics.
+            </p>
+
+            {/* Presets Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 block">
+                Quick Presets
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_PASSAGES.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setCustomRawInput(preset.text)}
+                    className="px-2.5 py-1 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 text-xs font-mono text-zinc-300 hover:text-amber-400 cursor-pointer transition-all"
+                  >
+                    {preset.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Textarea */}
+            <div className="space-y-1.5">
+              <textarea
+                value={customRawInput}
+                onChange={(e) => setCustomRawInput(e.target.value)}
+                placeholder="Paste your custom text, code, or paragraphs here..."
+                rows={5}
+                className="w-full p-3.5 rounded-2xl bg-zinc-950/80 border border-zinc-800 focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/60 text-zinc-200 font-mono text-xs leading-relaxed resize-none outline-none"
+              />
+              <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500">
+                <span>
+                  {customRawInput.trim() ? customRawInput.trim().split(/\s+/).filter(Boolean).length : 0} words • {customRawInput.length} chars
+                </span>
+                <span>Auto-cleans formatting</span>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsCustomModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold cursor-pointer transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textToUse = customRawInput.trim() || PRESET_PASSAGES[0].text;
+                  const sanitized = sanitizeCustomText(textToUse);
+                  setCustomWords(sanitized);
+                  setWords(sanitized);
+                  setMode('custom');
+                  setIsCustomModalOpen(false);
+                  resetTest();
+                }}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-md shadow-amber-500/20 cursor-pointer transition-all"
+              >
+                <Check className="w-4 h-4" />
+                <span>Start Custom Test</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

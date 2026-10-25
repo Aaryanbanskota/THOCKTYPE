@@ -18,7 +18,8 @@ import {
   SlidersHorizontal,
   Keyboard as KeyboardIcon,
   BookOpen,
-  ChevronDown
+  ChevronDown,
+  Infinity as InfinityIcon
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -72,7 +73,7 @@ export default function HomePage() {
           Eight switch recordings with dedicated spacebar stabilizers and spring return acoustics. Type on the keyboard below or jump into a benchmark.
         </p>
 
-        {/* Direct Action Hub: Exactly Two Buttons (Launch & Learn More) */}
+        {/* Direct Action Hub: Launch, Unlimited Mode, and Learn More */}
         <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/test"
@@ -81,6 +82,14 @@ export default function HomePage() {
             <Flame className="w-4 h-4 fill-zinc-950" />
             <span>Launch Typing Test</span>
             <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-amber-600/30 text-amber-950 text-[10px] font-mono font-bold">Alt+T</kbd>
+          </Link>
+
+          <Link
+            href="/unlimited"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <InfinityIcon className="w-4 h-4 text-amber-400" />
+            <span>Unlimited Mode (∞)</span>
           </Link>
 
           <Link

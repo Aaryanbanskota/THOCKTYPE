@@ -43,23 +43,38 @@ THOCKTYPE is an open-source typing laboratory designed for mechanical keyboard e
 - **Deskmat Resonance**: Optional sub-bass resonance filter simulating dense desk mat absorption.
 - **Zero-Latency Playback**: Synthesized directly via browser Web Audio API (`AudioContext`, `GainNode`, `BiquadFilter`, `DynamicsCompressor`).
 
-### 2. Strict Benchmark Diagnostics
+### 2. Unlimited / Endless Typing Mode (`/unlimited`)
+- **Endless Continuous Word Stream**: Practice typing for unlimited time with zero countdown timer pressure.
+- **Dynamic Line Generation**: Seamlessly appends new words as you type so you never experience buffer exhaustion.
+- **Instant Session Conclusion**: Press `Escape` or click "Finish Session" anytime to generate full benchmark analytics.
+
+### 3. Custom Text Practice & Drills
+- **Paste Your Own Text**: Practice essays, homework, programming code, or custom literature.
+- **Built-in Presets**: Pre-loaded with excerpts from classic science, philosophy, coding routines, and pangram speed drills.
+- **Automatic Formatting Sanitization**: Normalizes smart quotes, line endings, and whitespace for a smooth typing experience.
+
+### 4. Strict Benchmark Diagnostics
 - **Net vs. Raw Speed**: Computes both gross keystroke output (Raw WPM) and penalized accuracy speed (Net WPM) using the standard 5-character word formula.
 - **Consistency & Rhythm Scoring**: Measures inter-keystroke variance (standard deviation in milliseconds) to assess pacing stability.
 - **Trouble Key Detection**: Automatically captures error frequencies per character and surfaces top struggling keys for focused practice.
-- **Flexible Test Durations**: Supports 15s, 30s, 60s, 120s, and unlimited endurance modes with Easy, Medium, and Hard vocabulary banks.
+- **Flexible Test Durations**: Supports 15s, 30s, 60s, 90s sprints, custom text, and unlimited endurance modes.
 
-### 3. Distraction-Free Zen Focus Mode
-- Clean full-screen workspace accessible via `Alt + F`.
+### 5. AI & Search Engine Optimization (LLM Ready)
+- **Open LLM Standards**: Implements standard `/llms.txt` and `/llms-full.txt` for AI crawlers, Perplexity, ChatGPT, and Claude.
+- **Comprehensive Crawling Permissions**: Standard `/robots.txt` explicitly allowing modern AI and search engine scrapers.
+- **Schema.org Structured Data**: Rich `WebApplication` and `FAQPage` JSON-LD schemas embedded for natural language query matching.
+
+### 6. Distraction-Free Zen Focus Mode
+- Clean full-screen workspace accessible via `Alt + F` or at `/focus`.
 - Strips away headers, navigation bars, and background distractions.
-- Live WPM and accuracy meters that fade in only when actively typing.
+- Live WPM and accuracy meters with optional hidden WPM to eliminate anxiety.
 
-### 4. 24 Milestone Honors & GitHub-Style Accolades
+### 7. 24 Milestone Honors & GitHub-Style Accolades
 - Progressive achievement tiers: **Starter**, **Bronze**, **Silver**, **Gold**, and **Diamond**.
 - Real-time milestone evaluation tracking test count, velocity thresholds, accuracy streaks, and multi-switch testing.
 - Dedicated showcase page at `/badges` with progress meters, criteria breakdowns, and unlock timestamps.
 
-### 5. Dynamic Profile Rank Halo Rings
+### 8. Dynamic Profile Rank Halo Rings
 - The user's profile avatar halo ring and backlight glow evolve automatically with highest benchmark records:
   - **Starter Typist** (0–44 WPM): Emerald border and glow
   - **Bronze Key** (45–64 WPM): Warm bronze metallic halo
@@ -69,12 +84,12 @@ THOCKTYPE is an open-source typing laboratory designed for mechanical keyboard e
   - **Master Thocker** (120–139 WPM): Deep purple ultraviolet halo
   - **Grandmaster Elite** (140+ WPM): Fiery crimson rose aura
 
-### 6. 100% Offline Local Storage & 52-Week Heatmap
+### 9. 100% Offline Local Storage & 52-Week Heatmap
 - **Zero Signup**: Profiles are initialized automatically upon first visit.
 - **52-Week Activity Heatmap**: Visualizes practice cadence, streak counts, and daily session volume across 365 days.
 - **One-Click JSON Portability**: Export your complete benchmark history to a JSON file, or restore it on any device with one click.
 
-### 7. Mobile-Optimized Responsive Interface
+### 10. Mobile-Optimized Responsive Interface
 - Seamless touchscreen typing support with native on-screen keyboard compatibility.
 - Interactive virtual keyboard with real-time key lights and touch audio triggers.
 - Full-screen takeover navigation drawer and custom dark scrollbars matching the mechanical aesthetic.
@@ -85,14 +100,14 @@ THOCKTYPE is an open-source typing laboratory designed for mechanical keyboard e
 
 | ID | Switch Name | Category | Acoustic Profile | Sound Characteristics |
 |---|---|---|---|---|
-| `s1` | Creamy Lubed | Linear | Deep / Low Pitch | Smooth factory-lubed glide with soft bottom-out |
-| `s2` | Ice Crystal | Clicky | Crisp / High Pitch | Sharp metallic click with immediate tactile reset |
-| `s3` | Heavy Tactile | Tactile | Solid / Medium Pitch | Pronounced tactile bump with clean return clack |
-| `s4` | Vintage Clack | Clack | Bright / Medium Pitch | Classic 1980s retro terminal acoustic snap |
-| `s5` | Deep Thock | Thock | Deep Bass / Low Pitch | Heavy polycarbonate housing with dense acoustics |
-| `s6` | Bubble Pop | Pop | Bouncy / Medium Pitch | Light playful pop sound with rapid actuation |
-| `s7` | Spacebar Deep | Thock | Ultra-Deep / Sub-Bass | Hollow wire-balanced spacebar resonance |
-| `s8` | Hyper Type | Speed | Light / High Pitch | Short-travel competitive switch for rapid bursts |
+| `s1` | Frost Click (Cherry MX Blue) | Clicky | Crisp / High Pitch | Sharp metallic click with immediate tactile reset |
+| `s2` | Ruby Thock (Holy Panda) | Tactile | Deep Pop / Mid Pitch | Heavy tactile bump with rounded acoustic thock |
+| `s3` | Midnight Thock (Gateron Ink Black) | Linear | Low Thock / Bassy | Smooth lubricated travel with deep muffled bottom-out |
+| `s4` | Cream Clack (NovelKeys Cream) | Linear | Bright / Mid-High Pitch | Solid POM housing slap with distinct mechanical pop |
+| `s5` | Chestnut Mute (Silent Alpacas) | Linear | Dampened / Low Pitch | Soft silenced bottom-out for quiet typing environments |
+| `s6` | Glacier Pop (Kailh Box White) | Clicky | Crisp Pop / High Pitch | Dual click-bar snap on actuation and release |
+| `s7` | Onyx Deep (Topre Electrostatic) | Tactile | Deep Dome / Low Pitch | Capacitive rubber dome thud with spring return bounce |
+| `s8` | Alpine Clack (Gateron Yellow) | Linear | Clean Slap / Mid Pitch | Balanced linear feel with crisp acoustic clack |
 
 ---
 
@@ -188,6 +203,10 @@ npm run start
 │   ├── banner.svg          # Vector header banner
 │   ├── logo.png            # Application logo
 │   ├── icon.png            # Favicon and app icon
+│   ├── robots.txt          # Search engine & AI crawler permissions
+│   ├── llms.txt            # LLM discovery standard (llmstxt.org)
+│   ├── llms-full.txt       # Comprehensive specification for AI models
+│   ├── sitemap.xml         # XML sitemap index
 │   └── sounds/             # Mechanical switch audio samples
 ├── src/
 │   ├── app/
@@ -198,9 +217,11 @@ npm run start
 │   │   ├── privacy/        # Zero-telemetry privacy policy
 │   │   ├── profile/        # Local user profile, heatmap & history
 │   │   ├── shortcuts/      # Interactive keyboard shortcuts reference
+│   │   ├── sitemap.ts      # Dynamic XML sitemap generator
 │   │   ├── sounds/         # 8-switch acoustic laboratory
 │   │   ├── terms/          # Terms of service
 │   │   ├── test/           # Core typing test benchmark
+│   │   ├── unlimited/      # Dedicated unlimited endurance typing mode
 │   │   ├── globals.css     # Global styles & custom scrollbars
 │   │   └── page.tsx        # Landing page
 │   ├── components/
