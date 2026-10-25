@@ -20,7 +20,12 @@ import {
   Check,
   SignalLow,
   SignalMedium,
-  SignalHigh
+  SignalHigh,
+  Clock,
+  FileText,
+  Infinity as InfinityIcon,
+  X,
+  Sparkles
 } from 'lucide-react';
 import { SwitchIcon } from '@/components/SwitchIcon';
 import Link from 'next/link';
@@ -383,60 +388,82 @@ function FocusModeContent() {
    * ========================================================================= */
   if (!isConfigured) {
     return (
-      <div className="fixed inset-0 w-full h-[100dvh] bg-[#121314] text-zinc-100 flex flex-col items-center justify-center p-3 xs:p-4 sm:p-6 select-none overflow-y-auto">
-        <div className="w-full max-w-lg p-5 xs:p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-zinc-900/90 border border-zinc-800 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 my-auto">
+      <div className="fixed inset-0 w-full h-[100dvh] bg-[#0c0d10] text-zinc-100 flex flex-col items-center justify-center p-3 xs:p-4 sm:p-6 select-none overflow-y-auto relative">
+        
+        {/* Subtle Ambient Radial Backlight */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-xl p-5 xs:p-7 sm:p-8 rounded-3xl bg-[#141519]/95 border border-white/[0.08] shadow-[0_24px_64px_rgba(0,0,0,0.7)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150 my-auto relative z-10">
           
-          <div className="flex items-center justify-between pb-4 sm:pb-5 border-b border-zinc-800">
+          {/* Header */}
+          <div className="flex items-start justify-between pb-4 border-b border-white/[0.06]">
             <div>
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
-                Zen Focus Setup
-              </span>
-              <h2 className="text-lg xs:text-xl sm:text-2xl font-extrabold text-zinc-100 tracking-tight mt-0.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-semibold text-amber-300 tracking-wider uppercase mb-1.5">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>Zen Focus Session</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
                 Configure Your Session
               </h2>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Full-screen typing flow with authentic mechanical switch audio.
+              </p>
             </div>
+            
             <Link
               href="/test"
-              className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+              className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+              title="Exit to standard typing test"
             >
-              Exit to Standard
+              <X className="w-4 h-4" />
             </Link>
           </div>
 
-          {/* 1. Mode Selection (Time, Words, Unlimited) */}
-          <div className="mt-6 space-y-2">
-            <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
-              1. Choose Mode
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['time', 'words', 'unlimited'] as FocusModeType[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setSelectedMode(m)}
-                  className={`py-2 px-3 rounded-xl text-xs font-mono font-semibold capitalize transition-all ${
-                    selectedMode === m
-                      ? 'bg-amber-500 text-zinc-950 font-bold shadow-md'
-                      : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
+          {/* 1. Mode & Duration Selection */}
+          <div className="mt-5 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="uppercase tracking-wider text-neutral-400 font-medium">Session Goal</span>
+              <span className="text-neutral-500 text-[11px]">
+                {selectedMode === 'time' ? `${selectedDuration}s duration` : selectedMode === 'words' ? `${selectedWords} words` : 'Infinite stream'}
+              </span>
             </div>
 
-            {/* Sub-options for Time / Words */}
+            {/* Mode Segmented Bar */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.06]">
+              {(['time', 'words', 'unlimited'] as FocusModeType[]).map((m) => {
+                const isSelected = selectedMode === m;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSelectedMode(m)}
+                    className={`py-2 px-3 rounded-xl text-xs font-medium capitalize flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    {m === 'time' && <Clock className={`w-3.5 h-3.5 ${isSelected ? 'text-zinc-950' : 'text-neutral-400'}`} />}
+                    {m === 'words' && <FileText className={`w-3.5 h-3.5 ${isSelected ? 'text-zinc-950' : 'text-neutral-400'}`} />}
+                    {m === 'unlimited' && <InfinityIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-zinc-950' : 'text-neutral-400'}`} />}
+                    <span>{m === 'unlimited' ? 'Endless' : m}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Presets Sub-Row */}
             {selectedMode === 'time' && (
-              <div className="grid grid-cols-4 gap-2 pt-1.5">
-                {[15, 30, 60, 90].map((s) => (
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                {[15, 30, 60, 120].map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setSelectedDuration(s)}
-                    className={`py-1.5 rounded-lg text-xs font-mono transition-all ${
+                    className={`py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer ${
                       selectedDuration === s
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
-                        : 'bg-zinc-950/60 text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35 font-bold shadow-sm'
+                        : 'bg-black/30 text-neutral-400 hover:text-white border border-white/[0.04]'
                     }`}
                   >
                     {s}s
@@ -446,16 +473,16 @@ function FocusModeContent() {
             )}
 
             {selectedMode === 'words' && (
-              <div className="grid grid-cols-3 gap-2 pt-1.5">
-                {[25, 50, 100].map((w) => (
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                {[25, 50, 100, 200].map((w) => (
                   <button
                     key={w}
                     type="button"
                     onClick={() => setSelectedWords(w)}
-                    className={`py-1.5 rounded-lg text-xs font-mono transition-all ${
+                    className={`py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer ${
                       selectedWords === w
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
-                        : 'bg-zinc-950/60 text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35 font-bold shadow-sm'
+                        : 'bg-black/30 text-neutral-400 hover:text-white border border-white/[0.04]'
                     }`}
                   >
                     {w}w
@@ -463,49 +490,63 @@ function FocusModeContent() {
                 ))}
               </div>
             )}
+
+            {selectedMode === 'unlimited' && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/[0.08] border border-amber-500/20 text-xs font-mono text-amber-300">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>Continuous stream with no time limit. Finish whenever ready with Esc.</span>
+              </div>
+            )}
           </div>
 
           {/* 2. Difficulty Mode Selection */}
-          <div className="mt-6 space-y-2">
-            <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
-              2. Choose Practice Difficulty
+          <div className="mt-5 space-y-2">
+            <label className="text-xs font-mono uppercase tracking-wider text-neutral-400 font-medium block">
+              Vocabulary & Punctuation
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDifficulty(d)}
-                  className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-xl border text-center transition-all cursor-pointer ${
-                    difficulty === d
-                      ? d === 'easy'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm font-bold'
-                        : d === 'medium'
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm font-bold'
-                        : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm font-bold'
-                      : 'bg-zinc-950/60 hover:bg-zinc-800/40 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    {d === 'easy' && <SignalLow className="w-3.5 h-3.5 text-emerald-400" />}
-                    {d === 'medium' && <SignalMedium className="w-3.5 h-3.5 text-amber-400" />}
-                    {d === 'hard' && <SignalHigh className="w-3.5 h-3.5 text-rose-400" />}
-                    <span className="text-xs font-mono capitalize">{d}</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-400 leading-tight">
-                    {d === 'easy' ? 'Plain words' : d === 'medium' ? 'Commas & text' : 'Full key workout'}
-                  </span>
-                </button>
-              ))}
+              {(['easy', 'medium', 'hard'] as DifficultyMode[]).map((d) => {
+                const isSelected = difficulty === d;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDifficulty(d)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-white/[0.08] border-amber-500/60 shadow-sm ring-1 ring-amber-500/30'
+                        : 'bg-black/30 hover:bg-white/[0.03] border-white/[0.06] text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      {d === 'easy' && <SignalLow className="w-3.5 h-3.5 text-emerald-400" />}
+                      {d === 'medium' && <SignalMedium className="w-3.5 h-3.5 text-amber-400" />}
+                      {d === 'hard' && <SignalHigh className="w-3.5 h-3.5 text-rose-400" />}
+                      <span className={`text-xs font-semibold capitalize ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
+                        {d}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-neutral-400 leading-tight">
+                      {d === 'easy' ? 'Clean lowercase prose' : d === 'medium' ? 'Commas & punctuation' : 'Numbers & full symbol keys'}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* 3. Switch Personality Selection */}
-          <div className="mt-6 space-y-2">
-            <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
-              3. Select Mechanical Switch Sound
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="mt-5 space-y-2">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="uppercase tracking-wider text-neutral-400 font-medium">Mechanical Switch Audio</span>
+              <span className="text-neutral-300 text-[11px] font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: SWITCH_PROFILES[activePack]?.color }} />
+                <span>{SWITCH_PROFILES[activePack]?.name}</span>
+                <span className="text-neutral-500 font-normal">({SWITCH_PROFILES[activePack]?.category})</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
               {PACK_IDS.map((id) => {
                 const pack = SWITCH_PROFILES[id];
                 const isSelected = activePack === id;
@@ -517,21 +558,25 @@ function FocusModeContent() {
                       setActivePack(id);
                       playKey('KeyF', id);
                     }}
-                    className={`flex flex-col items-center p-2 rounded-xl border text-center transition-all ${
+                    className={`flex flex-col items-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-zinc-800 text-zinc-100 border-amber-500/50 ring-1 ring-amber-500/40 shadow-sm'
-                        : 'bg-zinc-950/60 hover:bg-zinc-800/40 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-white/[0.08] text-white shadow-md'
+                        : 'bg-black/30 hover:bg-white/[0.03] border-white/[0.06] text-neutral-400 hover:text-white'
                     }`}
+                    style={{
+                      borderColor: isSelected ? pack.color : undefined,
+                      boxShadow: isSelected ? `0 0 14px ${pack.color}25` : undefined
+                    }}
                   >
                     <SwitchIcon
                       id={id}
-                      className="w-3.5 h-3.5 mb-1 shrink-0"
+                      className="w-4 h-4 mb-1 shrink-0"
                       style={{ color: pack.color }}
                     />
                     <span className="text-[11px] font-semibold truncate w-full">
                       {pack.name.split(' ')[0]}
                     </span>
-                    <span className="text-[9px] font-mono text-zinc-500">
+                    <span className="text-[9px] font-mono text-neutral-500 uppercase">
                       {pack.category}
                     </span>
                   </button>
@@ -540,15 +585,15 @@ function FocusModeContent() {
             </div>
           </div>
 
-          {/* 3. Launch Zen Session Action Button */}
-          <div className="mt-8 pt-4 border-t border-zinc-800">
+          {/* Launch Action Button */}
+          <div className="mt-6 pt-4 border-t border-white/[0.06]">
             <button
               type="button"
               onClick={() => {
                 setIsConfigured(true);
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all active:scale-98 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-400/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               <Flame className="w-4 h-4 fill-zinc-950" />
               <span>Enter Zen Focus Mode</span>

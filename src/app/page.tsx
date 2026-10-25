@@ -48,53 +48,44 @@ export default function HomePage() {
     <div className="w-full max-w-full flex flex-col items-center overflow-x-hidden">
       
       {/* 1. Tactical Industrial Masthead & Live Workbench */}
-      <section className="relative w-full pt-6 sm:pt-10 pb-8 sm:pb-12 px-3 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
+      <section className="relative w-full pt-8 sm:pt-14 pb-10 sm:pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col items-center text-center">
         
-        {/* Terminal Header Info */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 text-[11px] sm:text-xs font-mono mb-4 px-1">
-          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 font-bold shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            TYPELOUDER // THOCKTYPE
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 shadow-sm">
-            Open Acoustic Lab
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold shadow-sm">
-            Zero Signup
-          </span>
+        {/* Unified Product Context Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-neutral-800 text-xs font-mono text-neutral-300 mb-6 shadow-sm backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span>Acoustic Mechanical Sound Lab</span>
+          <span className="text-neutral-600">•</span>
+          <span className="text-neutral-400">8 Studio Profiles</span>
+          <span className="text-neutral-600">•</span>
+          <span className="text-amber-400/90 font-semibold">Zero Signup</span>
         </div>
 
-        {/* Main Headline */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-zinc-100 tracking-tight max-w-2xl leading-snug sm:leading-tight px-1">
-          Mechanical switch sound test & typing speed lab.
+        {/* Main Rhythmic Headline */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08] max-w-3xl px-2">
+          Feel every keystroke. <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500">
+            Master your typing speed.
+          </span>
         </h1>
 
-        <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed px-2">
-          Eight switch recordings with dedicated spacebar stabilizers and spring return acoustics. Type on the keyboard below or jump into a benchmark.
+        <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base text-neutral-400 max-w-xl leading-relaxed px-4 font-normal">
+          Authentic mechanical switch soundscapes with sub-millisecond physical key tracking. Audition switch acoustics below or jump straight into a speed benchmark.
         </p>
 
-        {/* Direct Action Hub: Launch, Unlimited Mode, and Learn More */}
-        <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3">
+        {/* Direct Action Hub: Strictly TWO buttons (Launch Test & Learn More) */}
+        <div className="mt-7 sm:mt-8 flex items-center justify-center gap-3.5">
           <Link
             href="/test"
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-amber-400/20 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
             <Flame className="w-4 h-4 fill-zinc-950" />
-            <span>Launch Typing Test</span>
-            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-amber-600/30 text-amber-950 text-[10px] font-mono font-bold">Alt+T</kbd>
-          </Link>
-
-          <Link
-            href="/unlimited"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <InfinityIcon className="w-4 h-4 text-amber-400" />
-            <span>Unlimited Mode (∞)</span>
+            <span>Launch Test</span>
+            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-zinc-950/15 text-zinc-950 text-[10px] font-mono font-bold">Alt+T</kbd>
           </Link>
 
           <Link
             href="/learn-more"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs sm:text-sm tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 font-semibold text-xs sm:text-sm tracking-wide shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
             <BookOpen className="w-4 h-4 text-amber-400" />
             <span>Learn More</span>
@@ -103,24 +94,30 @@ export default function HomePage() {
         </div>
 
         {/* 2. Interactive Mechanical Workbench */}
-        <div className="mt-10 w-full flex flex-col items-center">
+        <div className="mt-12 w-full flex flex-col items-center">
           
-          {/* Switch Dock Header */}
-          <div className="w-full flex items-center justify-between pb-2.5 px-2 text-xs font-mono">
+          {/* Active Switch Status Bar */}
+          <div className="w-full flex items-center justify-between pb-3 px-2 text-xs font-mono">
             <div className="flex items-center gap-2 text-zinc-400">
-              <SwitchIcon id={activePack} className="w-3.5 h-3.5" style={{ color: currentProfile?.color }} />
-              <span className="text-zinc-500">ACTIVE:</span>
-              <span className="text-zinc-200 font-bold">{currentProfile?.name}</span>
-              <span className="text-[10px] text-zinc-500">({currentProfile?.category})</span>
+              <span
+                className="w-2.5 h-2.5 rounded-full inline-block animate-pulse shrink-0"
+                style={{ backgroundColor: currentProfile?.color }}
+              />
+              <span className="text-zinc-500 font-medium">ACTIVE ACOUSTICS:</span>
+              <span className="text-zinc-100 font-bold">{currentProfile?.name}</span>
+              <span className="text-[11px] text-zinc-500">
+                ({currentProfile?.category} • {currentProfile?.pitch} Pitch)
+              </span>
             </div>
-            <div className="text-[11px] text-zinc-500 hidden sm:flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px]">Alt + 1..8</kbd>
+
+            <div className="text-[11px] text-zinc-500 hidden sm:flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400">Alt + 1..8</kbd>
               <span>Hot-swap switch</span>
             </div>
           </div>
 
           {/* Hot-Swap Switch Selector Deck */}
-          <div className="w-full grid grid-cols-4 sm:grid-cols-8 gap-1.5 p-1.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 mb-3 shadow-md">
+          <div className="w-full grid grid-cols-4 sm:grid-cols-8 gap-1.5 p-1.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 mb-4 shadow-xl">
             {PACK_IDS.map((id, index) => {
               const pack = SWITCH_PROFILES[id];
               const isSelected = activePack === id;
@@ -132,16 +129,16 @@ export default function HomePage() {
                     setActivePack(id);
                     playKey('KeyF', id);
                   }}
-                  className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all ${
+                  className={`relative flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl text-[11px] font-medium transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-zinc-800 text-zinc-100 shadow-md ring-1 ring-zinc-700'
+                      ? 'bg-zinc-800 text-zinc-100 shadow-md ring-1 ring-zinc-700 translate-y-[1px]'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                   }`}
                   style={{
                     borderColor: isSelected ? pack.color : undefined,
-                    boxShadow: isSelected ? `0 0 12px ${pack.color}25` : undefined
+                    boxShadow: isSelected ? `0 0 14px ${pack.color}30` : undefined
                   }}
-                  title={`${pack.name} (Alt + ${index + 1})`}
+                  title={`${pack.name} (${pack.category}) — Alt + ${index + 1}`}
                 >
                   <span className="absolute top-1 right-1.5 text-[9px] font-mono text-zinc-500 opacity-60">
                     {index + 1}
@@ -151,7 +148,7 @@ export default function HomePage() {
                     className="w-4 h-4 mb-1 shrink-0"
                     style={{ color: pack.color }}
                   />
-                  <span className="truncate max-w-full text-center text-[10px] font-mono leading-tight">
+                  <span className="truncate max-w-full text-center text-[10px] font-mono leading-tight font-semibold">
                     {pack.name.split(' ')[0]}
                   </span>
                 </button>

@@ -171,12 +171,12 @@ function VirtualKeyboardComponent({ interactiveGlobal = true }: VirtualKeyboardP
 
   return (
     <div className="w-full max-w-full flex flex-col items-center select-none overflow-hidden">
-      {/* Keyboard Case */}
-      <div className="w-full max-w-4xl p-2 xs:p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-zinc-900 via-zinc-920 to-zinc-950 border-2 border-zinc-800 shadow-2xl shadow-black/80 relative overflow-hidden">
+      {/* Keyboard CNC Chassis */}
+      <div className="w-full max-w-4xl p-2.5 xs:p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#18191f] via-[#141519] to-[#0f1013] border-2 border-neutral-700/60 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.08)] relative overflow-hidden">
         
-        {/* Responsive Horizontal Scroll Wrapper for Mobile Viewports */}
+        {/* Recessed Plate / Switch Deck */}
         <div className="w-full max-w-full overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
-          <div className="min-w-[590px] sm:min-w-0 relative p-1.5 sm:p-3 rounded-xl sm:rounded-2xl bg-zinc-950/90 border border-zinc-800/80 shadow-inner space-y-1 sm:space-y-2">
+          <div className="min-w-[590px] sm:min-w-0 relative p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#0b0c0f] border border-neutral-800/90 shadow-inner space-y-1.5 sm:space-y-2">
             {KEYBOARD_ROWS.map((row, rIdx) => (
               <div key={rIdx} className="flex justify-center gap-1 sm:gap-1.5">
                 {row.map((key) => {
@@ -199,7 +199,7 @@ function VirtualKeyboardComponent({ interactiveGlobal = true }: VirtualKeyboardP
                       style={{
                         borderColor: isDown ? profile?.color : undefined,
                         boxShadow: isDown
-                          ? `0 0 16px ${profile?.color}55, inset 0 2px 4px rgba(0,0,0,0.8)`
+                          ? `0 0 16px ${profile?.color}50, inset 0 2px 4px rgba(0,0,0,0.85)`
                           : undefined
                       }}
                       className={`
@@ -209,25 +209,25 @@ function VirtualKeyboardComponent({ interactiveGlobal = true }: VirtualKeyboardP
                         ${key.width || 'w-8 sm:w-11'}
                         ${
                           isDown
-                            ? 'translate-y-1 bg-zinc-800 text-zinc-100'
-                            : 'bg-zinc-900/90 hover:bg-zinc-800/80 text-zinc-300 border-b-2 sm:border-b-4 border-zinc-950 shadow-md'
+                            ? 'translate-y-[2px] sm:translate-y-[3.5px] bg-[#16171b] text-white border-b-0 shadow-none'
+                            : 'bg-gradient-to-b from-[#24262d] to-[#1a1b20] hover:from-[#2a2c34] hover:to-[#1e1f26] text-neutral-200 border-b-2 sm:border-b-[4px] border-[#0a0a0d] shadow-[0_2px_4px_rgba(0,0,0,0.4)]'
                         }
-                        border border-zinc-700/60
+                        border border-white/[0.08]
                       `}
                     >
-                      {/* Key Label */}
+                      {/* Key Sub-label */}
                       {key.sub && (
-                        <span className="text-[9px] text-zinc-500 leading-none -mb-0.5">
+                        <span className="text-[9px] text-neutral-400 font-semibold leading-none -mb-0.5">
                           {key.sub}
                         </span>
                       )}
-                      <span className={`${key.sub ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs'} tracking-tight`}>
+                      <span className={`${key.sub ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs'} tracking-tight font-semibold`}>
                         {key.label}
                       </span>
 
-                      {/* Mechanical Stem Accent Dot on active */}
+                      {/* Mechanical Spacebar Stabilizer Bar */}
                       {isSpace && (
-                        <div className="absolute inset-x-8 bottom-1.5 h-0.5 rounded-full bg-zinc-700/50 group-hover:bg-zinc-600" />
+                        <div className="absolute inset-x-8 bottom-1.5 h-0.5 rounded-full bg-neutral-700/60 group-hover:bg-neutral-500" />
                       )}
                     </button>
                   );
@@ -238,20 +238,20 @@ function VirtualKeyboardComponent({ interactiveGlobal = true }: VirtualKeyboardP
         </div>
 
         {/* Mobile Swipe Hint */}
-        <div className="text-[10px] text-zinc-500 font-mono text-center mt-1 sm:hidden">
-          Swipe keyboard horizontally or tap to audition
+        <div className="text-[10px] text-neutral-500 font-mono text-center mt-1 sm:hidden">
+          Swipe keyboard horizontally or tap keys to audition
         </div>
 
-        {/* Brand Tag on Keyboard Case */}
-        <div className="mt-2 sm:mt-2.5 flex items-center justify-between px-2 text-[10px] text-zinc-500 font-mono">
+        {/* Tactile Chassis Brand & Plate Badge */}
+        <div className="mt-2.5 sm:mt-3 flex items-center justify-between px-2 text-[10px] text-neutral-500 font-mono">
           <div className="flex items-center gap-1.5">
             <span
               className="w-2 h-2 rounded-full inline-block animate-pulse shrink-0"
               style={{ backgroundColor: profile?.color }}
             />
-            <span className="truncate">ACTIVE SWITCH: {profile?.name.toUpperCase()}</span>
+            <span className="truncate text-neutral-400">ACOUSTIC PROFILE: <strong className="text-neutral-200">{profile?.name.toUpperCase()}</strong></span>
           </div>
-          <span className="hidden sm:inline">65% LAYOUT • PHYSICAL & CLICKABLE KEYS</span>
+          <span className="hidden sm:inline text-neutral-500">65% COMPACT • TACTILE MECHANICAL KEYCAPS</span>
         </div>
 
       </div>
